@@ -68,3 +68,28 @@ body{background:var(--beige);color:var(--ink)}
 .site-header .brand-name{display:block;font:600 22px/1.1 var(--serif);letter-spacing:-.04em;color:var(--green);white-space:nowrap}
 .site-header .brand-tagline{display:block;color:var(--muted);font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-top:4px;white-space:nowrap}
 @media(max-width:374px){.site-header .brand{gap:6px}.site-header .brand-logo{width:40px;height:40px}.site-header .brand-name{font-size:17px}.site-header .brand-tagline{font-size:7px;letter-spacing:.06em}}
+
+
+/* Expanded homepage animation library — selected from the admin panel. */
+html[data-home-animation="zoom"] .jija-animate{transform:scale(.94)}
+html[data-home-animation="zoom"] .jija-animate-visible{animation:jijaZoom .65s ease both}
+html[data-home-animation="rise"] .jija-animate{transform:translateY(32px)}
+html[data-home-animation="flip"] .jija-animate{transform:perspective(700px) rotateX(12deg);transform-origin:50% 0}
+html[data-home-animation="blur"] .jija-animate{filter:blur(7px);transform:translateY(8px)}
+html[data-home-animation="blur"] .jija-animate-visible{filter:blur(0);transition:opacity .7s ease,transform .7s ease,filter .7s ease}
+html[data-home-animation="bounce"] .jija-animate-visible{animation:jijaBounce .75s ease both}
+html[data-home-animation="rotate"] .jija-animate{transform:rotate(-3deg) scale(.97)}
+html[data-home-animation="glow"] .jija-animate-visible{animation:jijaGlow 2.4s ease-in-out infinite alternate}
+html[data-home-animation="color-pulse"] .hero,.site-header{transition:background-color .7s ease,color .7s ease}
+html[data-home-animation="color-pulse"] .jija-animate-visible{animation:jijaColorPulse 4s ease-in-out infinite alternate}
+html[data-home-animation="gradient-flow"] body{background:linear-gradient(120deg,var(--beige),var(--green-soft),var(--beige-deep),var(--beige));background-size:300% 300%;animation:jijaGradient 16s ease infinite}
+html[data-home-animation="gradient-flow"] .section{background:transparent}
+html[data-home-animation="shimmer"] .jija-animate-visible{animation:jijaShimmer 3.5s ease-in-out infinite}
+html[data-home-animation="glow"] .category-card:hover,html[data-home-animation="glow"] .product-card:hover .product-image-wrap{box-shadow:0 0 0 2px var(--gold),0 12px 30px color-mix(in srgb,var(--green) 20%,transparent)}
+@keyframes jijaZoom{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes jijaBounce{0%{opacity:0;transform:translateY(24px)}65%{opacity:1;transform:translateY(-5px)}100%{transform:translateY(0)}}
+@keyframes jijaGlow{from{box-shadow:0 0 0 color-mix(in srgb,var(--gold) 0%,transparent)}to{box-shadow:0 0 18px color-mix(in srgb,var(--gold) 28%,transparent)}}
+@keyframes jijaColorPulse{0%{filter:saturate(.92)}100%{filter:saturate(1.18)}}
+@keyframes jijaGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes jijaShimmer{0%,100%{filter:brightness(1)}50%{filter:brightness(1.07)}}
+@media(prefers-reduced-motion:reduce){html[data-home-animation] body{animation:none!important;background-size:auto!important}html[data-home-animation] .jija-animate-visible{animation:none!important;filter:none!important;box-shadow:none!important}}
