@@ -24,6 +24,8 @@ function whatsappLink(message = 'Hello Jija Studio! I have a question about your
   return `https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
+function isDemoProduct(p) { return !p || p.placeholder === true || String(p.id) === '121' || /demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || '')); }
+
 function applyAdminCatalogueAndPaymentSettings() {
   let savedProducts = null, settings = {};
   try { savedProducts = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null'); } catch {}
@@ -32,7 +34,7 @@ function applyAdminCatalogueAndPaymentSettings() {
   if (settings.upiName) STORE_CONFIG.upiName = settings.upiName;
   if (Array.isArray(savedProducts)) {
     const deleted = new Set(savedProducts.filter(p => p && p._deleted).map(p => String(p.id)));
-    const custom = savedProducts.filter(p => p && !p._deleted), ids = new Set(custom.map(p => String(p.id)));
+    const custom = savedProducts.filter(p => p && !p._deleted && !isDemoProduct(p)), ids = new Set(custom.map(p => String(p.id)));
     for (let i = products.length - 1; i >= 0; i--) if (deleted.has(String(products[i].id)) || ids.has(String(products[i].id))) products.splice(i, 1);
     custom.filter(p => p.published !== false).forEach(p => { const item = {...p,id:String(p.id),image:p.image||(p.images&&p.images[0])||'images/placeholder-fashion.svg'}; item.images=Array.isArray(p.images)&&p.images.length?p.images:[item.image]; item.video=p.video||''; item.sizes=p.sizes||['One Size']; item.colours=p.colours||['Default']; item.price=Number(p.price)||0; item.salePrice=Number(p.salePrice)||item.price; item.stock=Number(p.stock)||0; item.rating=Number(p.rating)||0; item.reviewCount=Number(p.reviewCount)||0; products.unshift(item); });
   }
