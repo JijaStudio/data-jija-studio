@@ -21,3 +21,11 @@
 .hero-grid.has-admin-banner .hero-visual>video,
 .hero-grid.has-admin-banner .hero-visual>.admin-hero-video{display:block;width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center;border-radius:0;box-shadow:none}
 @media(min-width:600px){.hero-grid.has-admin-banner .hero-copy{padding:34px 0}}
+
+
+/* Admin-selected homepage motion: subtle, accessible entrance effects. */
+.jija-animate{opacity:0;transition:opacity .65s ease,transform .65s cubic-bezier(.2,.7,.2,1)}
+html[data-home-animation="fade"] .jija-animate{transform:none}
+html[data-home-animation="slide"] .jija-animate{transform:translateY(22px)}
+.jija-animate.jija-animate-visible{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){.jija-animate{opacity:1!important;transform:none!important;transition:none!important}html{scroll-behavior:auto}}
