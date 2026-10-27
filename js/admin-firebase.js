@@ -67,14 +67,16 @@ async function connectAdmin(user) {
       get(ref(database, 'products')),
       get(ref(database, 'settings'))
     ]);
-    const remoteProducts = productsSnapshot.exists() ? productsSnapshot.val() : null;
+    const rawRemoteProducts = productsSnapshot.exists() ? productsSnapshot.val() : null;
+    const remoteProducts = Array.isArray(rawRemoteProducts) ? rawRemoteProducts.filter(p => p && p.placeholder !== true && String(p.id) !== '121' && !/demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || ''))) : rawRemoteProducts;
     const remoteSettings = settingsSnapshot.exists() ? settingsSnapshot.val() : null;
 
     // First connection: seed Firebase with this browser's current catalogue/settings.
     if (remoteProducts === null) {
-      await set(ref(database, 'products'), localJson(PRODUCT_KEY, []));
+      await set(ref(database, 'products'), (localJson(PRODUCT_KEY, []) || []).filter(p => p && p.placeholder !== true && String(p.id) !== '121' && !/demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || ''))));
     } else {
       localStorage.setItem(PRODUCT_KEY, JSON.stringify(remoteProducts));
+      if (Array.isArray(rawRemoteProducts) && JSON.stringify(rawRemoteProducts) !== JSON.stringify(remoteProducts)) await set(ref(database, 'products'), remoteProducts);
     }
     if (remoteSettings === null) {
       await set(ref(database, 'settings'), localJson(SETTINGS_KEY, {}));
