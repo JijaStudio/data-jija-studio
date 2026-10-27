@@ -6,11 +6,11 @@
 */
 const productFamilies = [
   { category: 'Ladies Wear', names: ['Anaya Floral Kurti','Aarohi Festive Kurta Set','Meera Everyday Kurti','Saanvi Embroidered Suit','Ira Cotton Kurti','Avani Ethnic Co-ord'], image: 'images/placeholder-fashion.svg', min: 499, max: 2499, sizes: ['S','M','L','XL','XXL'], colours: ['Emerald','Maroon','Beige','Rose'] },
-  { category: 'Sarees', names: ['Paithani Heritage Saree','Kashvi Festive Saree','Mogra Silk-Feel Saree','Rajwada Traditional Saree','Gulabi Occasion Saree'], image: 'images/placeholder-fashion.svg', min: 999, max: 4999, sizes: ['Free Size'], colours: ['Green','Wine','Gold','Pink'] },
+  { category: 'Sarees', names: ['Paithani Heritage Saree','Kashvi Festive Saree','Mogra Silk-Feel Saree','Rajwada Traditional Saree','Gulabi Occasion Saree'], image: 'images/placeholder-sarees.svg', min: 999, max: 4999, sizes: ['Free Size'], colours: ['Green','Wine','Gold','Pink'] },
   { category: 'Kids Wear', names: ['Tara Party Frock','Little Maharani Dress','Ishani Festive Set','Chiku Cotton Outfit','Myra Celebration Frock'], image: 'images/placeholder-kids.svg', min: 299, max: 1799, sizes: ['1-2Y','3-4Y','5-6Y','7-8Y'], colours: ['Pink','Mint','Yellow','Peach'] },
   { category: 'Jewellery', names: ['Aabha Gold-Tone Jhumka','Sitara Festive Earrings','Kundan Glow Necklace','Chandrika Pendant Set','Moti Pearl Drops'], image: 'images/placeholder-jewellery.svg', min: 149, max: 1499, sizes: ['One Size'], colours: ['Gold','Pearl','Green'] },
   { category: 'Bangles', names: ['Rajni Bridal Bangle Set','Gulnaar Glass Bangles','Kesar Festive Kada','Mira Everyday Bangles'], image: 'images/placeholder-jewellery.svg', min: 99, max: 999, sizes: ['2.4','2.6','2.8','2.10'], colours: ['Gold','Green','Red','Pink'] },
-  { category: 'Accessories', names: ['Kashmiri Embroidered Potli','Aarika Hair Accessory Set','Ethnic Mini Sling Bag','Festive Clutch Purse'], image: 'images/placeholder-fashion.svg', min: 199, max: 1299, sizes: ['One Size'], colours: ['Gold','Green','Pink'] }
+  { category: 'Accessories', names: ['Kashmiri Embroidered Potli','Aarika Hair Accessory Set','Ethnic Mini Sling Bag','Festive Clutch Purse'], image: 'images/placeholder-accessories.svg', min: 199, max: 1299, sizes: ['One Size'], colours: ['Gold','Green','Pink'] }
 ];
 
 // This array is the main catalogue used by every page. Replace sample data with real product data.
