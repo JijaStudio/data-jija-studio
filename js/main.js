@@ -3,7 +3,7 @@
 // IMPORTANT: replace these placeholders before launch. Use country code, digits only.
 const STORE_CONFIG = {
   storeName: 'Jija Studio',
-  whatsappNumber: '919999999999', // PLACEHOLDER: replace with your real WhatsApp number
+  whatsappNumber: '919673960373', // Jija Studio WhatsApp number
   phoneDisplay: '+91 XXXXX XXXXX',
   upiId: 'yourname@upi', // PLACEHOLDER: replace with your verified UPI ID
   upiName: 'Jija Studio',
