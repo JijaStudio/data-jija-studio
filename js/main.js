@@ -168,11 +168,13 @@ function setupProduct() {
   const product = findProduct(new URLSearchParams(location.search).get('id'));
   if (!product) { root.innerHTML = '<div class="empty-state"><h2>Product not found</h2><p>This product may have been moved.</p><a class="button button-primary" href="shop.html">Explore the shop</a></div>'; return; }
   const galleryImages = Array.isArray(product.images) && product.images.length ? product.images : [product.image];
+  product.sizes = Array.isArray(product.sizes) && product.sizes.length ? product.sizes : ['One Size'];
+  product.colours = Array.isArray(product.colours) && product.colours.length ? product.colours : ['Default'];
   const imageNote = product.placeholder ? '<p class="image-note">Sample image — replace with the actual product photo before launch.</p>' : '';
   const galleryHTML = '<div class="detail-gallery"><img class="detail-main-image" id="detail-main-image" src="' + escapeHTML(galleryImages[0] || product.image) + '" alt="' + escapeHTML(product.name) + '" />' +
     (galleryImages.length > 1 ? '<div class="detail-thumbnails">' + galleryImages.map((src,i) => '<button type="button" class="detail-thumb' + (i===0?' active':'') + '" data-gallery-image="' + i + '" aria-label="View product image ' + (i+1) + '"><img src="' + escapeHTML(src) + '" alt=""></button>').join('') + '</div>' : '') +
     (product.video ? '<video class="detail-product-video" controls playsinline preload="metadata" src="' + escapeHTML(product.video) + '"></video>' : '') + imageNote + '</div>';
-  root.innerHTML = galleryHTML +  <div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
+  root.innerHTML = galleryHTML + `<div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
   <div class="detail-price">${money(product.salePrice || product.price)} ${product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="save-tag">Special price</span>` : ''}</div>
   <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note">${product.stock > 0 ? `✓ In stock (${product.stock} shown in demo)` : 'Currently unavailable'}</p>
   ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>`<option>${escapeHTML(s)}</option>`).join('')}</select>` : ''}
