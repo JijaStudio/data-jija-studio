@@ -54,3 +54,19 @@ products.unshift({
   published: true,
   placeholder: false
 });
+
+
+// Apply admin catalogue overrides saved in this browser (GitHub Pages has no shared database).
+try {
+  const saved = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null');
+  if (Array.isArray(saved)) {
+    saved.forEach(item => {
+      const index = products.findIndex(p => String(p.id) === String(item.id));
+      if (index >= 0) products[index] = { ...products[index], ...item };
+      else products.push(item);
+    });
+    for (let i = products.length - 1; i >= 0; i--) {
+      if (products[i]._deleted) products.splice(i, 1);
+    }
+  }
+} catch (error) { console.warn('Admin product settings could not be loaded.', error); }
