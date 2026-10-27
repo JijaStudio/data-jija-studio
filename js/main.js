@@ -54,9 +54,12 @@ function applyAdminVisualPreferences(settings) {
 }
 function setupHomepageAnimations() {
   const mode = document.documentElement.dataset.homeAnimation || 'fade';
-  if (mode === 'none' || !('IntersectionObserver' in window)) return;
   const targets = document.querySelectorAll('main .hero-copy, main .hero-visual, main .trust-item, main .section-heading, main .category-card, main .product-card, main .story-copy, main .newsletter-inner');
-  targets.forEach(node => node.classList.add('jija-animate'));
+  if (mode === 'none' || !('IntersectionObserver' in window)) {
+    targets.forEach(node => { node.classList.remove('jija-animate'); node.classList.add('jija-animate-visible'); });
+    return;
+  }
+  targets.forEach(node => { if (!node.classList.contains('jija-animate-visible')) node.classList.add('jija-animate'); });
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
