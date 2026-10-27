@@ -29,3 +29,36 @@ html[data-home-animation="fade"] .jija-animate{transform:none}
 html[data-home-animation="slide"] .jija-animate{transform:translateY(22px)}
 .jija-animate.jija-animate-visible{opacity:1;transform:translateY(0)}
 @media(prefers-reduced-motion:reduce){.jija-animate{opacity:1!important;transform:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+
+/* Complete admin theme coverage: apply the selected palette across the whole storefront. */
+body{background:var(--beige);color:var(--ink)}
+.site-header{background:color-mix(in srgb,var(--white) 94%,var(--beige));}
+.main-nav{background:var(--white)}
+.hero{background:var(--beige)}
+.hero-copy>p:not(.eyebrow){color:var(--muted)}
+.hero-visual:before{background:var(--green-soft)}
+.hero-visual img{box-shadow:0 20px 40px color-mix(in srgb,var(--green) 13%,transparent)}
+.trust-strip{background:var(--white)}
+.trust-item{color:var(--green)}
+.section{background:var(--white)}
+.section-soft{background:var(--beige)}
+.section-heading h2,.page-heading h1,.story-copy h2{color:var(--green)}
+.category-card{background:var(--beige-deep)}
+.category-card:before{background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--green-dark) 78%,transparent))}
+.product-image-wrap{background:linear-gradient(145deg,var(--white),var(--beige-deep))}
+.product-badge{background:var(--white);color:var(--green)}
+.product-name{color:var(--ink)}
+.price-line strong,.rating,.text-link{color:var(--green)}
+.story-image{background:var(--beige)}
+.feature-icon{background:var(--green-soft);color:var(--green)}
+.newsletter{background:var(--green);color:var(--white)}
+.site-footer{background:var(--green-dark);color:var(--white)}
+.page-banner{background:var(--beige)}
+.shop-toolbar input,.shop-toolbar select,.form-control,.search-form input,.form-group input,.form-group textarea,.form-group select{background:var(--white);color:var(--ink);border-color:var(--line)}
+.detail-main-image{background:linear-gradient(145deg,var(--white),var(--beige-deep))}
+.save-tag,.status-message{background:var(--green-soft);color:var(--green)}
+.empty-state,.contact-card,.cart-summary{background:var(--beige)}
+.product-image-wrap>img{background:transparent}
+.home-coupon{background:var(--white);color:var(--green)}
+@media(prefers-reduced-motion:reduce){.jija-animate{opacity:1!important;transform:none!important}}
