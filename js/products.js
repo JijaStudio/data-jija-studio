@@ -14,6 +14,7 @@ try {
   const saved = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null');
   if (Array.isArray(saved)) {
     saved.forEach(item => {
+      if (!item || item.placeholder === true || String(item.id) === '121' || /demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(item.name || ''))) return;
       const index = products.findIndex(p => String(p.id) === String(item.id));
       if (index >= 0) products[index] = { ...products[index], ...item };
       else products.push(item);
