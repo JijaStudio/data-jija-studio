@@ -6,13 +6,33 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <style>
-.admin-shell{max-width:1120px;margin:32px auto;padding:0 18px 60px}.admin-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}.admin-top h1{font:600 clamp(28px,4vw,42px)/1.15 var(--serif);margin:0;color:var(--green)}.admin-note{background:#fff6df;border:1px solid #ecd89d;padding:14px 16px;border-radius:12px;margin-bottom:20px}.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.admin-tabs button{border:1px solid var(--line);border-radius:999px;background:white;padding:10px 16px}.admin-tabs button.active{background:var(--green);color:white}.admin-panel{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin:16px 0;box-shadow:var(--shadow)}.admin-panel h2{margin:0 0 16px;color:var(--green);font:600 24px var(--serif)}.admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-field{display:flex;flex-direction:column;gap:6px}.admin-field.full{grid-column:1/-1}.admin-field label{font-size:13px;font-weight:700}.admin-field input,.admin-field textarea,.admin-field select{width:100%;border:1px solid #d9dcd5;border-radius:10px;padding:11px 12px;background:#fffefa;min-height:44px}.admin-field textarea{min-height:100px;resize:vertical}.admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.admin-products{display:grid;gap:10px}.admin-inline{display:flex;gap:8px;align-items:center}.admin-inline input{flex:1;min-width:0}.admin-inline button{white-space:nowrap}@media(max-width:560px){.admin-inline{align-items:stretch;flex-direction:column}}.admin-product{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px}.admin-product img{width:64px;height:78px;object-fit:cover;border-radius:8px;background:#f4eee2}.admin-product .meta{flex:1;min-width:0}.admin-product .meta strong{display:block}.admin-product .meta small{color:var(--muted)}.admin-product button{min-height:38px;padding:7px 11px}.admin-status{margin-top:12px;font-weight:600;color:var(--green);min-height:24px}.admin-preview{max-width:230px;max-height:180px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#f7f3ed;margin-top:8px}.admin-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}@media(max-width:650px){.admin-grid{grid-template-columns:1fr}.admin-panel{padding:16px}.admin-product{align-items:flex-start;flex-wrap:wrap}.admin-product .meta{min-width:calc(100% - 90px)}}
+.admin-shell{display:none;max-width:1120px;margin:32px auto;padding:0 18px 60px}.admin-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}.admin-top h1{font:600 clamp(28px,4vw,42px)/1.15 var(--serif);margin:0;color:var(--green)}.admin-note{background:#fff6df;border:1px solid #ecd89d;padding:14px 16px;border-radius:12px;margin-bottom:20px}.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.admin-tabs button{border:1px solid var(--line);border-radius:999px;background:white;padding:10px 16px}.admin-tabs button.active{background:var(--green);color:white}.admin-panel{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin:16px 0;box-shadow:var(--shadow)}.admin-panel h2{margin:0 0 16px;color:var(--green);font:600 24px var(--serif)}.admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-field{display:flex;flex-direction:column;gap:6px}.admin-field.full{grid-column:1/-1}.admin-field label{font-size:13px;font-weight:700}.admin-field input,.admin-field textarea,.admin-field select{width:100%;border:1px solid #d9dcd5;border-radius:10px;padding:11px 12px;background:#fffefa;min-height:44px}.admin-field textarea{min-height:100px;resize:vertical}.admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.admin-products{display:grid;gap:10px}.admin-inline{display:flex;gap:8px;align-items:center}.admin-inline input{flex:1;min-width:0}.admin-inline button{white-space:nowrap}@media(max-width:560px){.admin-inline{align-items:stretch;flex-direction:column}}.admin-product{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px}.admin-product img{width:64px;height:78px;object-fit:cover;border-radius:8px;background:#f4eee2}.admin-product .meta{flex:1;min-width:0}.admin-product .meta strong{display:block}.admin-product .meta small{color:var(--muted)}.admin-product button{min-height:38px;padding:7px 11px}.admin-status{margin-top:12px;font-weight:600;color:var(--green);min-height:24px}.admin-preview{max-width:230px;max-height:180px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#f7f3ed;margin-top:8px}.admin-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}@media(max-width:650px){.admin-grid{grid-template-columns:1fr}.admin-panel{padding:16px}.admin-product{align-items:flex-start;flex-wrap:wrap}.admin-product .meta{min-width:calc(100% - 90px)}}
+
+.firebase-login{max-width:460px;margin:60px auto;padding:24px;background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.firebase-login h1{font:600 30px var(--serif);color:var(--green);margin-top:0}
+.firebase-login label{display:block;font-weight:700;font-size:13px;margin:14px 0 6px}
+.firebase-login input{width:100%;padding:12px;border:1px solid #d9dcd5;border-radius:10px}
+.firebase-login button{margin-top:16px;width:100%}
+.firebase-login-status{min-height:24px;margin-top:12px;color:var(--green);font-weight:600}
+body.firebase-ready .admin-shell{display:block}
+body.firebase-ready .firebase-login{display:none}
 </style></head>
 <body>
 <div class="announcement">Jija Studio · Store Admin</div>
+
+<section class="firebase-login" id="firebase-login">
+<h1>Admin sign in</h1>
+<p>Sign in with your Jija Studio Firebase Authentication admin account to manage shared products and settings.</p>
+<form id="firebase-login-form">
+<label for="firebase-email">Admin email</label><input id="firebase-email" type="email" autocomplete="username" required>
+<label for="firebase-password">Password</label><input id="firebase-password" type="password" autocomplete="current-password" required>
+<button class="button button-primary" type="submit" id="firebase-login-button">Sign in securely</button>
+</form>
+<div class="firebase-login-status" id="firebase-login-status" role="status">Connecting to Firebase…</div>
+</section>
 <main class="admin-shell">
 <div class="admin-top"><div><p class="eyebrow">Store management</p><h1>Jija Studio Admin</h1><p>Manage products, homepage banners, and coupon details.</p></div><a class="button button-outline" href="index.html">View storefront ↗</a></div>
-<div class="admin-note"><strong>Important: this is a static GitHub Pages site.</strong> Changes are saved in this browser only. They do not automatically update for customers on other devices or commit to GitHub. Use Export backup to save your catalogue/settings JSON. For shared live admin changes, the site needs a secure backend/database and admin authentication. Do not put passwords or private API keys in this page.</div>
+<div class="admin-note"><strong>Firebase connected admin.</strong> Products and store settings are synced with Firebase Realtime Database for use across devices. Uploaded images/videos are currently stored as data in the database; use small files to avoid database limits.</div>
 <div class="admin-tabs"><button class="active" data-tab="products">Products</button><button data-tab="homepage">Homepage & banner</button><button data-tab="coupon">Coupons</button><button data-tab="backup">Backup / restore</button></div>
 <section class="admin-panel" data-panel="products"><h2>Product catalogue</h2>
 <div class="admin-grid">
@@ -70,7 +90,7 @@
 <div class="admin-field"><label><input id="c-enabled" type="checkbox" checked style="width:auto;min-height:auto"> Show coupon on homepage</label></div>
 </div><p><small>Coupon redemption is not connected to checkout yet; this section controls the displayed offer only.</small></p><div class="admin-actions"><button class="button button-primary" id="save-coupon">Save coupon</button></div><div class="admin-status" id="coupon-status" role="status"></div></section>
 <section class="admin-panel" data-panel="backup" hidden><h2>Backup & restore</h2><p>Export the product catalogue and homepage settings as a JSON backup. Import that file in another browser to restore its local admin state. Image uploads embedded as data URLs increase the file size.</p><div class="admin-actions"><button class="button button-primary" id="export-data">Export backup JSON</button><label class="button button-outline" for="import-data" style="display:inline-flex;align-items:center;cursor:pointer">Import backup JSON</label><input id="import-data" type="file" accept="application/json,.json" hidden></div><div class="admin-status" id="backup-status" role="status"></div></section>
-<div class="admin-footer">Jija Studio · Local admin prototype · Plain HTML, CSS and JavaScript</div>
+<div class="admin-footer">Jija Studio · Firebase-connected admin</div>
 </main>
 <script src="js/products.js"></script>
 <script>
@@ -140,4 +160,5 @@ $('import-data').addEventListener('change',e=>{const file=e.target.files[0];if(!
 readProducts();renderSelect();renderList();if(catalogue.length)loadProduct(catalogue[0].id);
 })();
 </script>
+<script type="module" src="js/admin-firebase.js"></script>
 </body></html>
