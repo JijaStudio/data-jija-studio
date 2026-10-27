@@ -34,3 +34,23 @@ productFamilies.forEach((family, familyIndex) => {
   }
 });
 // The six editable product families create 120 sample catalogue items for the demo.
+// Featured real product supplied by Jija Studio.
+products.unshift({
+  id: '121',
+  name: 'Dusty Rose Floral Embroidered Kurta Set with Dupatta',
+  category: "Ladies Wear",
+  price: 2000,
+  salePrice: 1200,
+  image: 'images/dusty-rose-kurta.jpg',
+  images: ['images/dusty-rose-kurta.jpg'],
+  video: '',
+  description: 'Elegant dusty rose / mauve pink three-piece ethnic set featuring floral embroidery on the kurta front, embroidered V-neckline, three-quarter sleeves, matching straight-fit pants, and a matching sheer embroidered dupatta. Suitable for festive celebrations, family gatherings, parties, and special occasions. Set includes 1 kurta, 1 pant, and 1 dupatta. Please confirm garment measurements and fabric composition before ordering.',
+  sizes: ['M', 'L', 'XL', 'XXL'],
+  colours: ['Dusty Rose', 'Mauve Pink'],
+  stock: 8,
+  rating: 0,
+  reviewCount: 0,
+  badge: '40% OFF',
+  published: true,
+  placeholder: false
+});
