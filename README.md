@@ -32,3 +32,9 @@ In the repository, open **Settings → Pages**, select **Deploy from a branch**,
 
 - Product editor supports one main image, up to three optional additional images, and an optional product video; product detail pages display selectable image thumbnails and a video player.
 - Homepage admin settings include an editable UPI ID and payee name used by the cart/payment section. Verify the UPI ID before accepting payments.
+
+
+## Firebase configuration
+- `js/firebase-config.js` exports the Firebase app, Realtime Database, Storage, Authentication, and optional Analytics initialization for the Jija Studio Firebase project.
+- The current storefront/admin pages are not yet fully wired to read/write products or upload media through Firebase; this file establishes the SDK configuration only.
+- Before enabling shared admin writes, enable Firebase Authentication and configure strict Realtime Database and Storage Security Rules. Never use public write access in production.
