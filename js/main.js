@@ -4,7 +4,7 @@
 const STORE_CONFIG = {
   storeName: 'Jija Studio',
   whatsappNumber: '919673960373', // Jija Studio WhatsApp number
-  phoneDisplay: '+91 XXXXX XXXXX',
+  phoneDisplay: '+91 96739 60373',
   upiId: 'yourname@upi', // PLACEHOLDER: replace with your verified UPI ID
   upiName: 'Jija Studio',
   currency: 'INR'
