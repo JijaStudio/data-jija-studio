@@ -42,6 +42,20 @@ function applyAdminHomepageSettings() {
     const p = hero.querySelector('.hero-copy > p:not(.eyebrow)');
     if (p) p.textContent = settings.heroSubtitle;
   }
+  const editableText = {
+    '[data-admin-collections-title]': settings.collectionsTitle,
+    '[data-admin-collections-subtitle]': settings.collectionsSubtitle,
+    '[data-admin-featured-title]': settings.featuredTitle,
+    '[data-admin-featured-subtitle]': settings.featuredSubtitle,
+    '[data-admin-story-title]': settings.storyTitle,
+    '[data-admin-story-copy]': settings.storyCopy,
+    '[data-admin-contact-title]': settings.contactTitle,
+    '[data-admin-contact-copy]': settings.contactCopy
+  };
+  Object.entries(editableText).forEach(([selector, value]) => {
+    const node = document.querySelector(selector);
+    if (node && value) node.textContent = value;
+  });
   const visual = document.querySelector('.hero-visual');
   if (visual && settings.bannerSrc) {
     visual.innerHTML = settings.bannerType === 'video'
@@ -51,7 +65,7 @@ function applyAdminHomepageSettings() {
   if (hero && settings.couponCode) {
     let coupon = document.querySelector('[data-home-coupon]');
     if (!coupon) { coupon = document.createElement('div'); coupon.setAttribute('data-home-coupon',''); coupon.className = 'home-coupon'; hero.querySelector('.hero-copy')?.appendChild(coupon); }
-    coupon.textContent = settings.couponEnabled === false ? '' : (settings.couponText || 'Use coupon') + ' ' + settings.couponCode;
+    coupon.textContent = settings.couponEnabled === false ? '' : (settings.couponText || 'Use coupon') + ' ' + settings.couponCode + (settings.couponDiscount ? ' · ' + settings.couponDiscount : '');
     coupon.hidden = settings.couponEnabled === false;
   }
 }
