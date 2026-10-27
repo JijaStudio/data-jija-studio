@@ -23,6 +23,39 @@ function updateCartCount() {
 function whatsappLink(message = 'Hello Jija Studio! I have a question about your products.') {
   return `https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
+
+function applyAdminHomepageSettings() {
+  let settings = {};
+  try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
+  const announcement = document.querySelector('[data-admin-announcement]');
+  if (announcement && settings.announcement) announcement.textContent = settings.announcement;
+  if (settings.whatsappNumber && /^\d{10}$/.test(settings.whatsappNumber)) {
+    STORE_CONFIG.whatsappNumber = '91' + settings.whatsappNumber;
+    STORE_CONFIG.phoneDisplay = '+91 ' + settings.whatsappNumber.slice(0, 5) + ' ' + settings.whatsappNumber.slice(5);
+  }
+  const hero = document.querySelector('.hero');
+  if (hero && settings.heroTitle) {
+    const h = hero.querySelector('h1');
+    if (h) h.innerHTML = escapeHTML(settings.heroTitle).replace(/\n/g, '<br>');
+  }
+  if (hero && settings.heroSubtitle) {
+    const p = hero.querySelector('.hero-copy > p:not(.eyebrow)');
+    if (p) p.textContent = settings.heroSubtitle;
+  }
+  const visual = document.querySelector('.hero-visual');
+  if (visual && settings.bannerSrc) {
+    visual.innerHTML = settings.bannerType === 'video'
+      ? '<video class="admin-hero-video" autoplay muted loop playsinline><source src="' + escapeHTML(settings.bannerSrc) + '"></video>'
+      : '<img src="' + escapeHTML(settings.bannerSrc) + '" alt="' + escapeHTML(settings.bannerAlt || 'Jija Studio featured banner') + '">';
+  }
+  if (hero && settings.couponCode) {
+    let coupon = document.querySelector('[data-home-coupon]');
+    if (!coupon) { coupon = document.createElement('div'); coupon.setAttribute('data-home-coupon',''); coupon.className = 'home-coupon'; hero.querySelector('.hero-copy')?.appendChild(coupon); }
+    coupon.textContent = settings.couponEnabled === false ? '' : (settings.couponText || 'Use coupon') + ' ' + settings.couponCode;
+    coupon.hidden = settings.couponEnabled === false;
+  }
+}
+
 function setupGlobalUI() {
   updateCartCount();
   const toggle = document.querySelector('.menu-toggle');
@@ -153,7 +186,7 @@ function setupContact() {
 
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    setupGlobalUI(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
+    applyAdminHomepageSettings(); setupGlobalUI(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
     document.querySelectorAll('[data-check-pin]').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); const pin = form.querySelector('input').value.trim(); const output = form.querySelector('[data-pin-result]'); output.textContent = /^\d{6}$/.test(pin) ? 'PIN code format looks valid. Actual delivery availability must be confirmed by the store.' : 'Please enter a valid 6-digit Indian PIN code.'; }));
   } catch (error) {
     console.error('Jija Studio storefront initialisation failed:', error);
