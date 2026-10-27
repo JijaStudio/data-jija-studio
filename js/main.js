@@ -50,7 +50,7 @@ const JIJA_PALETTES = {
 function applyAdminVisualPreferences(settings) {
   const palette = JIJA_PALETTES[settings.colorPalette] || JIJA_PALETTES.emerald;
   Object.entries(palette).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
-  document.documentElement.dataset.homeAnimation = ['none','fade','slide'].includes(settings.animationStyle) ? settings.animationStyle : 'fade';
+  document.documentElement.dataset.homeAnimation = ['none','fade','slide','zoom','rise','flip','blur','bounce','rotate','glow','color-pulse','gradient-flow','shimmer'].includes(settings.animationStyle) ? settings.animationStyle : 'fade';
 }
 function setupHomepageAnimations() {
   const mode = document.documentElement.dataset.homeAnimation || 'fade';
