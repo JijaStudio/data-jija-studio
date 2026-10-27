@@ -68,6 +68,7 @@ function enableAutoSync() {
 }
 
 async function connectAdmin(user) {
+  let shouldReloadForRemoteData = false;
   status('Signed in. Loading products and settings from Firebase…');
   try {
     const [productsSnapshot, settingsSnapshot] = await Promise.all([
@@ -82,13 +83,17 @@ async function connectAdmin(user) {
     if (remoteProducts === null) {
       await set(ref(database, 'products'), (localJson(PRODUCT_KEY, []) || []).filter(p => p && p.placeholder !== true && String(p.id) !== '121' && !/demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || ''))));
     } else {
-      localStorage.setItem(PRODUCT_KEY, JSON.stringify(remoteProducts));
+      const remoteProductsJson = JSON.stringify(remoteProducts);
+      if (localStorage.getItem(PRODUCT_KEY) !== remoteProductsJson) shouldReloadForRemoteData = true;
+      localStorage.setItem(PRODUCT_KEY, remoteProductsJson);
       if (Array.isArray(rawRemoteProducts) && JSON.stringify(rawRemoteProducts) !== JSON.stringify(remoteProducts)) await set(ref(database, 'products'), remoteProducts);
     }
     if (remoteSettings === null) {
       await set(ref(database, 'settings'), localJson(SETTINGS_KEY, {}));
     } else {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(remoteSettings));
+      const remoteSettingsJson = JSON.stringify(remoteSettings);
+      if (localStorage.getItem(SETTINGS_KEY) !== remoteSettingsJson) shouldReloadForRemoteData = true;
+      localStorage.setItem(SETTINGS_KEY, remoteSettingsJson);
     }
 
     readyToSync = true;
@@ -96,8 +101,8 @@ async function connectAdmin(user) {
 
     // The existing admin UI reads localStorage during startup. Reload once after
     // Firebase data is loaded so its product list and settings reflect the database.
-    if (sessionStorage.getItem('jijaFirebaseHydrated') !== 'yes') {
-      sessionStorage.setItem('jijaFirebaseHydrated', 'yes');
+    // The admin form initializes before Firebase loads. Reload if remote data changed local cache.
+    if (shouldReloadForRemoteData) {
       location.reload();
       return;
     }
