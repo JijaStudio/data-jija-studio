@@ -149,19 +149,41 @@ function setupHome() {
 }
 function setupShop() {
   const grid = document.querySelector('#shop-grid'); if (!grid) return;
-  const search = document.querySelector('#shop-search'); const category = document.querySelector('#category-filter'); const sort = document.querySelector('#sort-filter'); const count = document.querySelector('#results-count');
-  const params = new URLSearchParams(location.search); if (search) search.value = params.get('q') || ''; if (category && params.get('category')) category.value = params.get('category');
+  const search = document.querySelector('#shop-search'); const category = document.querySelector('#category-filter'); const subcategory = document.querySelector('#subcategory-filter'); const sort = document.querySelector('#sort-filter'); const count = document.querySelector('#results-count');
+  let settings = {};
+  try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
+  const params = new URLSearchParams(location.search);
+  const allCategories = [...new Set([...products.map(p => p.category).filter(Boolean), ...(settings.categories || []), ...Object.keys(settings.subcategories || {})])].sort();
+  if (category) {
+    const requested = params.get('category') || 'all';
+    category.innerHTML = '<option value="all">All categories</option>' + allCategories.map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
+    category.value = allCategories.includes(requested) ? requested : 'all';
+  }
+  function fillSubcategories() {
+    if (!subcategory) return;
+    const parent = category?.value || 'all';
+    const names = parent === 'all'
+      ? [...new Set([...products.map(p => p.subcategory).filter(Boolean), ...Object.values(settings.subcategories || {}).flat()])]
+      : [...new Set([...(settings.subcategories?.[parent] || []), ...products.filter(p => p.category === parent).map(p => p.subcategory).filter(Boolean)])];
+    const requested = params.get('subcategory') || 'all';
+    subcategory.innerHTML = '<option value="all">All subcategories</option>' + names.sort().map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
+    subcategory.value = names.includes(requested) ? requested : 'all';
+  }
+  fillSubcategories();
   function filter() {
-    let list = products.filter(p => p.published);
-    const q = (search?.value || '').toLowerCase().trim(); const cat = category?.value || 'all';
-    if (q) list = list.filter(p => `${p.name} ${p.category} ${p.description}`.toLowerCase().includes(q));
+    let list = products.filter(p => p.published !== false);
+    const q = (search?.value || '').toLowerCase().trim(); const cat = category?.value || 'all'; const sub = subcategory?.value || 'all';
+    if (q) list = list.filter(p => `${p.name} ${p.category} ${p.subcategory || ''} ${p.description}`.toLowerCase().includes(q));
     if (cat !== 'all') list = list.filter(p => p.category === cat);
+    if (sub !== 'all') list = list.filter(p => p.subcategory === sub);
     if (sort?.value === 'price-low') list.sort((a,b) => (a.salePrice || a.price) - (b.salePrice || b.price));
     if (sort?.value === 'price-high') list.sort((a,b) => (b.salePrice || b.price) - (a.salePrice || a.price));
     if (sort?.value === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
     renderProducts(grid, list); if (count) count.textContent = `${list.length} styles to discover`;
   }
-  [search, category, sort].forEach(control => control?.addEventListener(control === search ? 'input' : 'change', filter)); filter();
+  [search, subcategory, sort].forEach(control => control?.addEventListener(control === search ? 'input' : 'change', filter));
+  category?.addEventListener('change', () => { fillSubcategories(); filter(); });
+  filter();
 }
 function setupProduct() {
   const root = document.querySelector('#product-detail'); if (!root) return;
