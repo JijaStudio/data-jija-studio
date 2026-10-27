@@ -43,6 +43,14 @@
 <div class="admin-field full"><label for="h-banner-file">Upload banner image (recommended under 1 MB)</label><input id="h-banner-file" type="file" accept="image/png,image/jpeg,image/webp"><img id="h-banner-preview" class="admin-preview" alt="Banner preview" hidden></div>
 <div class="admin-field full"><label for="h-banner-alt">Banner image description (accessibility)</label><input id="h-banner-alt" placeholder="Jija Studio festive collection"></div>
 <div class="admin-field"><label for="h-whatsapp">WhatsApp mobile number (10 digits, India)</label><input id="h-whatsapp" inputmode="numeric" maxlength="10" value="9673960373"></div>
+<div class="admin-field"><label for="h-collections-title">Collections section heading</label><input id="h-collections-title" placeholder="Shop by collection"></div>
+<div class="admin-field"><label for="h-collections-subtitle">Collections subtitle</label><input id="h-collections-subtitle"></div>
+<div class="admin-field"><label for="h-featured-title">Featured products heading</label><input id="h-featured-title" placeholder="Featured favourites"></div>
+<div class="admin-field"><label for="h-featured-subtitle">Featured products subtitle</label><input id="h-featured-subtitle"></div>
+<div class="admin-field full"><label for="h-story-title">Brand story heading</label><input id="h-story-title"></div>
+<div class="admin-field full"><label for="h-story-copy">Brand story paragraph</label><textarea id="h-story-copy"></textarea></div>
+<div class="admin-field"><label for="h-contact-title">Contact / WhatsApp section heading</label><input id="h-contact-title"></div>
+<div class="admin-field"><label for="h-contact-copy">Contact / WhatsApp section description</label><input id="h-contact-copy"></div>
 </div><div class="admin-actions"><button class="button button-primary" id="save-home">Save homepage settings</button></div><div class="admin-status" id="home-status" role="status"></div>
 </section>
 <section class="admin-panel" data-panel="coupon" hidden><h2>Coupon settings</h2><div class="admin-grid">
@@ -81,9 +89,21 @@ $('h-announcement').value=settings.announcement||'A little tradition, a lot of s
 $('h-title').value=settings.heroTitle||'Wear your story.\nOwn your moment.';
 $('h-subtitle').value=settings.heroSubtitle||'From everyday favourites to celebration-ready looks, find fashion that feels beautifully you.';
 $('h-banner-type').value=settings.bannerType||'image';$('h-banner-url').value=settings.bannerSrc||'';$('h-banner-alt').value=settings.bannerAlt||'Jija Studio featured banner';$('h-whatsapp').value=(settings.whatsappNumber||'9673960373');
+$('h-collections-title').value=settings.collectionsTitle||'Shop by collection';
+$('h-collections-subtitle').value=settings.collectionsSubtitle||'A little something for every wardrobe.';
+$('h-featured-title').value=settings.featuredTitle||'Featured favourites';
+$('h-featured-subtitle').value=settings.featuredSubtitle||'Explore sample styles from our demo catalogue.';
+$('h-story-title').value=settings.storyTitle||'Tradition close to the heart. Style made for today.';
+$('h-story-copy').value=settings.storyCopy||'We believe the right outfit is more than something you wear — it is part of your celebrations, everyday rituals and personal story.';
+$('h-contact-title').value=settings.contactTitle||'Need help finding your look?';
+$('h-contact-copy').value=settings.contactCopy||'Message our team for product questions, sizes and order enquiries.';
 if(settings.bannerSrc&&settings.bannerType!=='video'){$('h-banner-preview').src=settings.bannerSrc;$('h-banner-preview').hidden=false;}
 $('h-banner-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(file.size>950000){showStatus('home-status','Please use a banner image under 950 KB.');e.target.value='';return;}const reader=new FileReader();reader.onload=()=>{$('h-banner-url').value='';$('h-banner-preview').src=reader.result;$('h-banner-preview').hidden=false;$('h-banner-preview').dataset.pending=reader.result;};reader.readAsDataURL(file);});
-$('save-home').addEventListener('click',()=>{const phone=$('h-whatsapp').value.replace(/\D/g,'');if(!/^\d{10}$/.test(phone)){showStatus('home-status','Enter a valid 10-digit Indian mobile number.');return;}const old=safeRead(SETTINGS_KEY,{});const pending=$('h-banner-preview').dataset.pending;const data={...old,announcement:$('h-announcement').value.trim(),heroTitle:$('h-title').value,heroSubtitle:$('h-subtitle').value.trim(),bannerType:$('h-banner-type').value,bannerSrc:pending||$('h-banner-url').value.trim(),bannerAlt:$('h-banner-alt').value.trim(),whatsappNumber:phone};try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(data));delete $('h-banner-preview').dataset.pending;showStatus('home-status','Homepage settings saved in this browser. Open index.html in this same browser to preview.');}catch(err){showStatus('home-status','Could not save. Use a smaller image or an external video URL.');}});
+$('save-home').addEventListener('click',()=>{const phone=$('h-whatsapp').value.replace(/\D/g,'');if(!/^\d{10}$/.test(phone)){showStatus('home-status','Enter a valid 10-digit Indian mobile number.');return;}const old=safeRead(SETTINGS_KEY,{});const pending=$('h-banner-preview').dataset.pending;const data={...old,announcement:$('h-announcement').value.trim(),heroTitle:$('h-title').value,heroSubtitle:$('h-subtitle').value.trim(),bannerType:$('h-banner-type').value,bannerSrc:pending||$('h-banner-url').value.trim(),bannerAlt:$('h-banner-alt').value.trim(),whatsappNumber:phone,
+collectionsTitle:$('h-collections-title').value.trim(),collectionsSubtitle:$('h-collections-subtitle').value.trim(),
+featuredTitle:$('h-featured-title').value.trim(),featuredSubtitle:$('h-featured-subtitle').value.trim(),
+storyTitle:$('h-story-title').value.trim(),storyCopy:$('h-story-copy').value.trim(),
+contactTitle:$('h-contact-title').value.trim(),contactCopy:$('h-contact-copy').value.trim()};try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(data));delete $('h-banner-preview').dataset.pending;showStatus('home-status','Homepage settings saved in this browser. Open index.html in this same browser to preview.');}catch(err){showStatus('home-status','Could not save. Use a smaller image or an external video URL.');}});
 $('c-code').value=settings.couponCode||'';$('c-text').value=settings.couponText||'Use coupon';$('c-discount').value=settings.couponDiscount||'';$('c-enabled').checked=settings.couponEnabled!==false;
 $('save-coupon').addEventListener('click',()=>{const data=safeRead(SETTINGS_KEY,{});Object.assign(data,{couponCode:$('c-code').value.trim().toUpperCase(),couponText:$('c-text').value.trim(),couponDiscount:$('c-discount').value.trim(),couponEnabled:$('c-enabled').checked});try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(data));showStatus('coupon-status','Coupon display settings saved locally. Checkout redemption is not enabled.');}catch{showStatus('coupon-status','Could not save settings.');}});
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);}));
