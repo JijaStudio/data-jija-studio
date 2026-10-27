@@ -24,6 +24,19 @@ function whatsappLink(message = 'Hello Jija Studio! I have a question about your
   return `https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
+function applyAdminCatalogueAndPaymentSettings() {
+  let savedProducts = null, settings = {};
+  try { savedProducts = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null'); } catch {}
+  try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
+  if (settings.upiId && /^[^\\s@]+@[^\\s@]+$/.test(settings.upiId)) STORE_CONFIG.upiId = settings.upiId;
+  if (settings.upiName) STORE_CONFIG.upiName = settings.upiName;
+  if (Array.isArray(savedProducts)) {
+    const deleted = new Set(savedProducts.filter(p => p && p._deleted).map(p => String(p.id)));
+    const custom = savedProducts.filter(p => p && !p._deleted), ids = new Set(custom.map(p => String(p.id)));
+    for (let i = products.length - 1; i >= 0; i--) if (deleted.has(String(products[i].id)) || ids.has(String(products[i].id))) products.splice(i, 1);
+    custom.filter(p => p.published !== false).forEach(p => { const item = {...p,id:String(p.id),image:p.image||(p.images&&p.images[0])||'images/placeholder-fashion.svg'}; item.images=Array.isArray(p.images)&&p.images.length?p.images:[item.image]; item.video=p.video||''; item.sizes=p.sizes||['One Size']; item.colours=p.colours||['Default']; item.price=Number(p.price)||0; item.salePrice=Number(p.salePrice)||item.price; item.stock=Number(p.stock)||0; item.rating=Number(p.rating)||0; item.reviewCount=Number(p.reviewCount)||0; products.unshift(item); });
+  }
+}
 function applyAdminHomepageSettings() {
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
@@ -154,8 +167,12 @@ function setupProduct() {
   const root = document.querySelector('#product-detail'); if (!root) return;
   const product = findProduct(new URLSearchParams(location.search).get('id'));
   if (!product) { root.innerHTML = '<div class="empty-state"><h2>Product not found</h2><p>This product may have been moved.</p><a class="button button-primary" href="shop.html">Explore the shop</a></div>'; return; }
-  root.innerHTML = `<div class="detail-gallery"><img class="detail-main-image" src="${escapeHTML(product.image)}" alt="Sample placeholder image for ${escapeHTML(product.name)}"/><p class="image-note">Sample image — replace with the actual product photo before launch.</p></div>
-  <div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
+  const galleryImages = Array.isArray(product.images) && product.images.length ? product.images : [product.image];
+  const imageNote = product.placeholder ? '<p class="image-note">Sample image — replace with the actual product photo before launch.</p>' : '';
+  const galleryHTML = '<div class="detail-gallery"><img class="detail-main-image" id="detail-main-image" src="' + escapeHTML(galleryImages[0] || product.image) + '" alt="' + escapeHTML(product.name) + '" />' +
+    (galleryImages.length > 1 ? '<div class="detail-thumbnails">' + galleryImages.map((src,i) => '<button type="button" class="detail-thumb' + (i===0?' active':'') + '" data-gallery-image="' + i + '" aria-label="View product image ' + (i+1) + '"><img src="' + escapeHTML(src) + '" alt=""></button>').join('') + '</div>' : '') +
+    (product.video ? '<video class="detail-product-video" controls playsinline preload="metadata" src="' + escapeHTML(product.video) + '"></video>' : '') + imageNote + '</div>';
+  root.innerHTML = galleryHTML +  <div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
   <div class="detail-price">${money(product.salePrice || product.price)} ${product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="save-tag">Special price</span>` : ''}</div>
   <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note">${product.stock > 0 ? `✓ In stock (${product.stock} shown in demo)` : 'Currently unavailable'}</p>
   ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>`<option>${escapeHTML(s)}</option>`).join('')}</select>` : ''}
@@ -163,6 +180,7 @@ function setupProduct() {
   <div class="detail-actions"><button class="button button-primary" id="detail-add">Add to bag</button><a class="button button-outline" target="_blank" rel="noopener" href="${whatsappLink(`Hello Jija Studio, I am interested in ${product.name} (Product ID: ${product.id}). Please share details.`)}">Ask on WhatsApp</a></div>
   <div class="product-assurance"><p>✦ Thoughtfully selected styles</p><p>↗ Shipping details confirmed at order</p><p>♡ Need help? Our team can assist on WhatsApp</p></div></div>`;
   document.querySelector('#detail-add').addEventListener('click', () => addToCart(product.id, 1, document.querySelector('#product-size')?.value || 'One Size', document.querySelector('#product-colour')?.value || ''));
+  root.querySelectorAll('[data-gallery-image]').forEach(button => button.addEventListener('click', () => { const idx=Number(button.dataset.galleryImage); const main=root.querySelector('#detail-main-image'); if(main&&galleryImages[idx]) main.src=galleryImages[idx]; root.querySelectorAll('[data-gallery-image]').forEach(b=>b.classList.toggle('active',b===button)); }));
   renderProducts(document.querySelector('#related-products'), products.filter(p => p.category === product.category && p.id !== product.id).slice(0,4));
 }
 function setupCart() {
@@ -200,7 +218,7 @@ function setupContact() {
 
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    applyAdminHomepageSettings(); setupGlobalUI(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
+    applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupGlobalUI(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
     document.querySelectorAll('[data-check-pin]').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); const pin = form.querySelector('input').value.trim(); const output = form.querySelector('[data-pin-result]'); output.textContent = /^\d{6}$/.test(pin) ? 'PIN code format looks valid. Actual delivery availability must be confirmed by the store.' : 'Please enter a valid 6-digit Indian PIN code.'; }));
   } catch (error) {
     console.error('Jija Studio storefront initialisation failed:', error);
