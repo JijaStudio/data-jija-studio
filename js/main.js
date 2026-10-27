@@ -74,6 +74,8 @@ function applyAdminHomepageSettings() {
   if (Array.isArray(settings.collectionCards)) settings.collectionCards.forEach((card, i) => { const link=document.querySelector('[data-collection-card="'+i+'"]'); const img=document.querySelector('[data-collection-image="'+i+'"]'); const title=document.querySelector('[data-collection-title="'+i+'"]'); const subtitle=document.querySelector('[data-collection-subtitle="'+i+'"]'); if(!link)return; if(card.title&&title)title.textContent=card.title; if(card.subtitle&&subtitle)subtitle.textContent=card.subtitle; if(card.image&&img){img.src=card.image;img.alt=(card.title||'Jija Studio')+' collection';} if(card.category)link.href='shop.html?category='+encodeURIComponent(card.category); });
   const visual = document.querySelector('.hero-visual');
   if (visual && settings.bannerSrc) {
+    const heroGrid = visual.closest('.hero-grid');
+    if (heroGrid) heroGrid.classList.add('has-admin-banner');
     visual.innerHTML = settings.bannerType === 'video'
       ? '<video class="admin-hero-video" autoplay muted loop playsinline><source src="' + escapeHTML(settings.bannerSrc) + '"></video>'
       : '<img src="' + escapeHTML(settings.bannerSrc) + '" alt="' + escapeHTML(settings.bannerAlt || 'Jija Studio featured banner') + '">';
