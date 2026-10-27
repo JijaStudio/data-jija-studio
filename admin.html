@@ -106,7 +106,8 @@ const DEFAULT_CATEGORIES=['Ladies Wear','Sarees','Kids Wear','Jewellery','Bangle
 let categoryData={};
 let catalogue=[], deletedIds=[], selectedId=null, imageData='', extraImageData=['','',''], videoData='';
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')||fallback}catch{return fallback}};
-function readProducts(){const saved=safeRead(PRODUCT_KEY,null);deletedIds=Array.isArray(saved)?saved.filter(p=>p._deleted).map(p=>String(p.id)):[];catalogue=Array.isArray(saved)?saved.filter(p=>!p._deleted):products.map(p=>({...p}));}
+function isDemoProduct(p){return !p||p.placeholder===true||String(p.id)==='121'||/demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name||''));}
+function readProducts(){const saved=safeRead(PRODUCT_KEY,null);deletedIds=Array.isArray(saved)?saved.filter(p=>p._deleted).map(p=>String(p.id)):[];catalogue=Array.isArray(saved)?saved.filter(p=>!p._deleted&&!isDemoProduct(p)):[];if(Array.isArray(saved)&&catalogue.length!==saved.filter(p=>!p._deleted).length){storeProducts();}}
 function storeProducts(){localStorage.setItem(PRODUCT_KEY,JSON.stringify([...catalogue,...deletedIds.map(id=>({_deleted:true,id}))]));}
 function showStatus(id,msg){$(id).textContent=msg;}
 function split(v){return v.split(',').map(x=>x.trim()).filter(Boolean);}
