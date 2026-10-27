@@ -62,3 +62,9 @@ body{background:var(--beige);color:var(--ink)}
 .product-image-wrap>img{background:transparent}
 .home-coupon{background:var(--white);color:var(--green)}
 @media(prefers-reduced-motion:reduce){.jija-animate{opacity:1!important;transform:none!important}}
+
+/* Keep the store name visible beside the logo in the top navigation. */
+.site-header .brand>span{display:block;min-width:0}
+.site-header .brand-name{display:block;font:600 22px/1.1 var(--serif);letter-spacing:-.04em;color:var(--green);white-space:nowrap}
+.site-header .brand-tagline{display:block;color:var(--muted);font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-top:4px;white-space:nowrap}
+@media(max-width:374px){.site-header .brand{gap:6px}.site-header .brand-logo{width:40px;height:40px}.site-header .brand-name{font-size:17px}.site-header .brand-tagline{font-size:7px;letter-spacing:.06em}}
