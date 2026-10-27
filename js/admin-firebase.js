@@ -38,7 +38,7 @@ async function syncLocalToFirebase(key, rawValue) {
   let value;
   try { value = JSON.parse(rawValue); } catch { return; }
   const path = key === PRODUCT_KEY ? 'products' : 'settings';
-  writeQueue = writeQueue.then(() => set(ref(database, path), value));
+  writeQueue = writeQueue.catch(() => {}).then(() => set(ref(database, path), value));
   try {
     await writeQueue;
     status('Connected to Firebase · changes synced');
@@ -47,6 +47,13 @@ async function syncLocalToFirebase(key, rawValue) {
     status('Firebase write failed: ' + (error.code || error.message) + '. Check Realtime Database rules.', true);
   }
 }
+
+// Explicit save API for admin buttons: wait for Firebase to confirm the write.
+window.jijaSaveFirebaseSettings = async function(value) {
+  if (!auth.currentUser || !readyToSync) throw new Error('Firebase is not connected. Please wait for the connected status and try again.');
+  await set(ref(database, 'settings'), value);
+  return true;
+};
 
 function enableAutoSync() {
   const originalSetItem = Storage.prototype.setItem;
