@@ -29,9 +29,12 @@ async function hydrateStorefront() {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsSnapshot.val() || {}));
       changed = true;
     }
-    if (changed && sessionStorage.getItem(HYDRATED_KEY) !== 'yes') {
-      sessionStorage.setItem(HYDRATED_KEY, 'yes');
-      location.reload();
+    if (changed) {
+      window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded'));
+      if (sessionStorage.getItem(HYDRATED_KEY) !== 'yes') {
+        sessionStorage.setItem(HYDRATED_KEY, 'yes');
+        location.reload();
+      }
     }
   } catch (error) {
     console.warn('Jija Studio shared catalogue/settings could not be loaded from Firebase.', error);
