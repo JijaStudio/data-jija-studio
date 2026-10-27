@@ -39,9 +39,38 @@ function applyAdminCatalogueAndPaymentSettings() {
     custom.filter(p => p.published !== false).forEach(p => { const item = {...p,id:String(p.id),image:p.image||(p.images&&p.images[0])||'images/placeholder-fashion.svg'}; item.images=Array.isArray(p.images)&&p.images.length?p.images:[item.image]; item.video=p.video||''; item.sizes=p.sizes||['One Size']; item.colours=p.colours||['Default']; item.price=Number(p.price)||0; item.salePrice=Number(p.salePrice)||item.price; item.stock=Number(p.stock)||0; item.rating=Number(p.rating)||0; item.reviewCount=Number(p.reviewCount)||0; products.unshift(item); });
   }
 }
+const JIJA_PALETTES = {
+  emerald: {'--green':'#174d38','--green-dark':'#103827','--green-soft':'#e7eee8','--beige':'#f4eee2','--beige-deep':'#e8dcc5','--gold':'#c6a04a','--ink':'#242820','--muted':'#72766e','--white':'#fffefa','--line':'#e8e3d9'},
+  rose: {'--green':'#874b5d','--green-dark':'#653344','--green-soft':'#f3e5e9','--beige':'#fbf0f1','--beige-deep':'#eed5dc','--gold':'#c58a78','--ink':'#302329','--muted':'#806d73','--white':'#fffafb','--line':'#eadde1'},
+  royal: {'--green':'#234b83','--green-dark':'#17365f','--green-soft':'#e4edf8','--beige':'#f1f5fb','--beige-deep':'#dce6f4','--gold':'#c5a45d','--ink':'#202a39','--muted':'#687587','--white':'#ffffff','--line':'#dfe6ef'},
+  plum: {'--green':'#633d69','--green-dark':'#432749','--green-soft':'#eee5f0','--beige':'#f7f0f6','--beige-deep':'#e7d9e9','--gold':'#c9ad83','--ink':'#2b2430','--muted':'#776d7b','--white':'#fffaff','--line':'#e8deea'},
+  terracotta: {'--green':'#9a4e36','--green-dark':'#713724','--green-soft':'#f5e7df','--beige':'#fbf0e6','--beige-deep':'#efd8c5','--gold':'#c89b56','--ink':'#30251f','--muted':'#806f64','--white':'#fffaf5','--line':'#eaded3'},
+  monochrome: {'--green':'#282828','--green-dark':'#111111','--green-soft':'#eeeeeb','--beige':'#f4f1ea','--beige-deep':'#e5e0d6','--gold':'#a18a5a','--ink':'#242424','--muted':'#737373','--white':'#fffefa','--line':'#e2ded5'}
+};
+function applyAdminVisualPreferences(settings) {
+  const palette = JIJA_PALETTES[settings.colorPalette] || JIJA_PALETTES.emerald;
+  Object.entries(palette).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
+  document.documentElement.dataset.homeAnimation = ['none','fade','slide'].includes(settings.animationStyle) ? settings.animationStyle : 'fade';
+}
+function setupHomepageAnimations() {
+  const mode = document.documentElement.dataset.homeAnimation || 'fade';
+  if (mode === 'none' || !('IntersectionObserver' in window)) return;
+  const targets = document.querySelectorAll('main .hero-copy, main .hero-visual, main .trust-item, main .section-heading, main .category-card, main .product-card, main .story-copy, main .newsletter-inner');
+  targets.forEach(node => node.classList.add('jija-animate'));
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('jija-animate-visible');
+      observer.unobserve(entry.target);
+    });
+  }, {threshold:0.12});
+  targets.forEach(node => observer.observe(node));
+}
+
 function applyAdminHomepageSettings() {
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
+  applyAdminVisualPreferences(settings);
   const announcement = document.querySelector('[data-admin-announcement]');
   if (announcement && settings.announcement) announcement.textContent = settings.announcement;
   if (settings.whatsappNumber && /^\d{10}$/.test(settings.whatsappNumber)) {
@@ -153,6 +182,7 @@ function showToast(message) {
 }
 
 function setupHome() {
+  setupHomepageAnimations();
   renderProducts(document.querySelector('#featured-products'), products.filter(p => p.published).slice(0, 8));
   const search = document.querySelector('#hero-search');
   if (search) search.addEventListener('submit', event => { event.preventDefault(); const q = search.querySelector('input').value.trim(); location.href = `shop.html?q=${encodeURIComponent(q)}`; });
