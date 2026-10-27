@@ -86,6 +86,11 @@ function applyAdminHomepageSettings() {
   }
 }
 
+window.addEventListener('jija:firebase-data-loaded', () => {
+  try { applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupHome(); setupShop(); }
+  catch (error) { console.error('Could not refresh Jija Studio from Firebase data.', error); }
+});
+
 function setupGlobalUI() {
   updateCartCount();
   const toggle = document.querySelector('.menu-toggle');
