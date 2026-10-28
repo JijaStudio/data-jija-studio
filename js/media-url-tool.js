@@ -107,13 +107,30 @@ uploadButton?.addEventListener('click', async () => {
       customMetadata: { originalName: file.name, uploadedFor: 'Jija Studio admin media URL converter' }
     });
     await new Promise((resolve, reject) => {
+      let settled = false;
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        try { task.cancel(); } catch {}
+        reject(new Error('Upload made no confirmed progress for 45 seconds. Check Firebase Storage setup, security rules, billing/quota, and your internet connection.'));
+      }, 45000);
       task.on('state_changed',
         snapshot => {
           const percent = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100);
           setStatus('Uploading… ' + percent + '%');
         },
-        reject,
-        resolve
+        error => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          reject(error);
+        },
+        () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          resolve();
+        }
       );
     });
     const url = await getDownloadURL(task.snapshot.ref);
@@ -123,7 +140,9 @@ uploadButton?.addEventListener('click', async () => {
   } catch (error) {
     console.error('Media upload failed:', error);
     let message = error.code || error.message || 'Unknown upload error';
-    if (error.code === 'storage/unauthorized' || error.code === 'storage/unauthenticated') {
+    if (String(error.message || '').includes('45 seconds')) {
+      message = error.message + ' If Storage has never been enabled, open Firebase Console → Build → Storage → Get started and create the bucket first.';
+    } else if (error.code === 'storage/unauthorized' || error.code === 'storage/unauthenticated') {
       message = 'Firebase Storage blocked this upload. Update Firebase Storage rules to allow write access for your signed-in admin UID, then retry.';
     } else if (error.code === 'storage/bucket-not-found') {
       message = 'Firebase Storage bucket was not found. Open Firebase Console → Storage and finish setting up the Storage bucket for this project.';
