@@ -150,3 +150,13 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
 .product-assurance p{margin:7px 0;line-height:1.5;font-size:14px}
 .product-assurance strong{color:var(--green-dark)}
 #p-discount-preview{display:block;color:var(--green);font-weight:700;margin-top:5px}
+
+
+/* Free delivery promotion across the homepage and cart */
+.shipping-offer-wrap{padding:0 0 12px;background:var(--beige)}
+.shipping-offer{display:flex;align-items:center;justify-content:center;gap:14px;padding:17px 20px;border:1px solid var(--gold);border-radius:12px;background:linear-gradient(110deg,var(--green-soft),var(--white));color:var(--ink);text-align:left}
+.shipping-offer-icon{font-size:27px;flex:0 0 auto}
+.shipping-offer strong,.shipping-offer small{display:block}
+.shipping-offer strong{font-size:clamp(15px,2.2vw,19px);color:var(--green-dark)}
+.shipping-offer small{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.4}
+@media(max-width:480px){.shipping-offer{justify-content:flex-start;padding:13px;gap:10px}.shipping-offer-icon{font-size:23px}}
