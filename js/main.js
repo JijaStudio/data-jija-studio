@@ -195,7 +195,7 @@ function setupGlobalUI() {
 function productCard(product) {
   const sizeStock = product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : {};
   const hasSizeStock = Object.keys(sizeStock).length > 0;
-  const sizeStockHTML = hasSizeStock ? `<p class="size-stock-summary">${(product.sizes || Object.keys(sizeStock)).map(size => { const qty = Number(sizeStock[size] ?? 0); return `<span class="${qty > 0 ? 'size-in-stock' : 'size-out-stock'}">${escapeHTML(size)}: ${qty > 0 ? qty + ' left' : 'Out of stock'}</span>`; }).join('')}</p>` : '';
+  const sizeStockHTML = hasSizeStock ? `<p class="size-stock-summary">${(product.sizes || Object.keys(sizeStock)).map(size => { const qty = Math.max(0,Math.floor(Number(sizeStock[size] ?? 0))); return `<span class="${qty > 0 ? 'size-in-stock' : 'size-out-stock'}">${escapeHTML(size)}: ${qty > 0 ? qty + (qty === 1 ? ' dress available' : ' dresses available') : 'Out of stock'}</span>`; }).join('')}</p>` : '';
   return `<article class="product-card">
     <a class="product-image-wrap" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHTML(product.name)}">
       <img src="${escapeHTML(product.image)}" alt="Sample placeholder image for ${escapeHTML(product.name)} from Jija Studio" loading="lazy">
@@ -239,15 +239,50 @@ function renderProducts(container, list) {
     setTimeout(() => { if (button.isConnected) button.textContent = '＋'; }, 900);
   }));
 }
+function trackedStock(product) {
+  const map = product && product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : {};
+  return Object.keys(map).length ? map : null;
+}
+function availableForCart(product, size) {
+  const map = trackedStock(product);
+  if (!map) return Infinity; // Legacy products without per-size inventory remain compatible.
+  return Math.max(0, Math.floor(Number(map[size] ?? 0)));
+}
+function cartQuantityForSize(cart, productId, size) {
+  return cart.filter(item => String(item.id) === String(productId) && String(item.size || 'One Size') === String(size || 'One Size'))
+    .reduce((sum,item) => sum + Math.max(0, Math.floor(Number(item.quantity) || 0)), 0);
+}
+function validateCartStock(cart, notify = false) {
+  for (const item of cart) {
+    const product = findProduct(item.id);
+    if (!product) continue;
+    const map = trackedStock(product);
+    if (!map) continue;
+    const available = availableForCart(product, item.size);
+    if (available <= 0 || Number(item.quantity) > available) {
+      if (notify) showToast(available <= 0 ? (item.size || 'This size') + ' is out of stock. Remove it from your bag.' : 'Only ' + available + ' of size ' + item.size + ' available. Please reduce the quantity.');
+      return false;
+    }
+  }
+  return true;
+}
 function addToCart(id, quantity = 1, size = '', colour = '') {
   const product = findProduct(id); if (!product) return;
-  const sizeStock = product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : null;
-  if (sizeStock && Object.keys(sizeStock).length && size) {
-    const available = Number(sizeStock[size] ?? 0);
-    const current = getCart().filter(item => String(item.id) === String(product.id) && item.size === size).reduce((sum,item) => sum + Number(item.quantity || 0),0);
-    if (available <= 0 || current + quantity > available) { showToast(available <= 0 ? size + ' is out of stock' : 'Only ' + available + ' of size ' + size + ' available'); return; }
-  }
   const cart = getCart();
+  const map = trackedStock(product);
+  if (map) {
+    if (!size) {
+      const availableSize = (product.sizes || Object.keys(map)).find(s => availableForCart(product, s) > 0);
+      if (!availableSize) { showToast('This product is out of stock'); return; }
+      size = availableSize;
+    }
+    const available = availableForCart(product, size);
+    const current = cartQuantityForSize(cart, product.id, size);
+    if (available <= 0 || current + quantity > available) {
+      showToast(available <= 0 ? size + ' is out of stock' : 'Only ' + available + ' dress' + (available === 1 ? '' : 'es') + ' available in size ' + size);
+      return;
+    }
+  }
   const key = `${product.id}|${size}|${colour}`;
   const existing = cart.find(item => item.key === key);
   if (existing) existing.quantity += quantity;
@@ -325,12 +360,12 @@ function setupProduct() {
     (product.video ? '<video class="detail-product-video" controls playsinline preload="metadata" src="' + escapeHTML(product.video) + '"></video>' : '') + imageNote + '</div>';
   root.innerHTML = galleryHTML + `<div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
   <div class="detail-price">${money(product.salePrice || product.price)} ${product.salePrice > 0 && product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="save-tag">${Math.round((product.price-product.salePrice)/product.price*100)}% OFF · Save ${money(product.price-product.salePrice)}</span>` : ''}</div>
-  <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note">${product.stock > 0 ? `✓ In stock (${product.stock} available)` : 'Currently unavailable'}</p>
-  ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>{const tracked=product.stockBySize&&Object.keys(product.stockBySize).length>0;const qty=tracked?Number(product.stockBySize[s]??0):null;return `<option value="${escapeHTML(s)}" ${tracked&&qty<=0?'disabled':''}>${escapeHTML(s)}${tracked?(qty>0?' — '+qty+' left':' — Out of stock'):''}</option>`;}).join('')}</select>` : ''}
+  <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note" id="detail-stock-note">${trackedStock(product) ? 'Choose a size to see availability.' : (product.stock > 0 ? 'In stock' : 'Availability confirmed by the store')}</p>
+  ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>{const tracked=!!trackedStock(product);const qty=tracked?availableForCart(product,s):null;return `<option value="${escapeHTML(s)}" ${tracked&&qty<=0?'disabled':''}>${escapeHTML(s)}</option>`;}).join('')}</select>` : ''}
   <label class="field-label" for="product-colour">Colour</label><select id="product-colour" class="form-control">${product.colours.map(c=>`<option>${escapeHTML(c)}</option>`).join('')}</select>
   <div class="detail-actions"><button class="button button-primary" id="detail-add">Add to bag</button><a class="button button-outline" target="_blank" rel="noopener" href="${whatsappLink(`Hello Jija Studio, I am interested in ${product.name} (Product ID: ${product.id}). Please share details.`)}">Ask on WhatsApp</a></div>
   <div class="product-assurance"><p>🚚 <strong>Estimated delivery:</strong> ${escapeHTML(product.deliveryTime || '3–5 days')}</p><p>↩ <strong>Returns:</strong> ${product.returnPolicy==='returnable'?'Returnable':product.returnPolicy==='exchange-only'?'Exchange only':'Non-returnable'}</p><p>💳 <strong>Payment:</strong> ${product.paymentPolicy==='online-cod'?'Online payment or Cash on Delivery':product.paymentPolicy==='cod-only'?'Cash on Delivery only':'Online payment only'}</p><p>♡ Need help? Our team can assist on WhatsApp</p></div></div>`;
-  const addButton=document.querySelector('#detail-add');const sizeSelect=document.querySelector('#product-size');const trackedSizes=product.stockBySize&&Object.keys(product.stockBySize).length>0;if(sizeSelect&&trackedSizes){const refreshAddButton=()=>{const opt=sizeSelect.selectedOptions[0];addButton.disabled=!opt||opt.disabled;addButton.textContent=addButton.disabled?'Out of stock':'Add to bag';};sizeSelect.addEventListener('change',refreshAddButton);if(sizeSelect.options.length&&sizeSelect.selectedOptions[0]?.disabled){const available=[...sizeSelect.options].find(o=>!o.disabled);if(available)sizeSelect.value=available.value;}refreshAddButton();}addButton.addEventListener('click', () => addToCart(product.id, 1, sizeSelect?.value || 'One Size', document.querySelector('#product-colour')?.value || ''));
+  const addButton=document.querySelector('#detail-add');const sizeSelect=document.querySelector('#product-size');const stockNote=document.querySelector('#detail-stock-note');const trackedSizes=!!trackedStock(product);if(sizeSelect&&trackedSizes){const refreshAvailability=()=>{const size=sizeSelect.value;const qty=availableForCart(product,size);const opt=sizeSelect.selectedOptions[0];if(stockNote)stockNote.textContent=qty>0?qty+(qty===1?' dress available in this size':' dresses available in this size'):'Out of stock';addButton.disabled=!opt||opt.disabled;addButton.textContent=addButton.disabled?'Out of stock':'Add to bag';};if(sizeSelect.options.length&&sizeSelect.selectedOptions[0]?.disabled){const available=[...sizeSelect.options].find(o=>!o.disabled);if(available)sizeSelect.value=available.value;}sizeSelect.addEventListener('change',refreshAvailability);refreshAvailability();}addButton.addEventListener('click', () => addToCart(product.id, 1, sizeSelect?.value || 'One Size', document.querySelector('#product-colour')?.value || ''));
   root.querySelectorAll('[data-gallery-image]').forEach(button => button.addEventListener('click', () => { const idx=Number(button.dataset.galleryImage); const main=root.querySelector('#detail-main-image'); if(main&&galleryImages[idx]) main.src=galleryImages[idx]; root.querySelectorAll('[data-gallery-image]').forEach(b=>b.classList.toggle('active',b===button)); }));
   renderProducts(document.querySelector('#related-products'), products.filter(p => p.category === product.category && p.id !== product.id).slice(0,4));
 }
@@ -338,14 +373,18 @@ function setupCart() {
   const root = document.querySelector('#cart-items'); if (!root) return;
   const subtotalNode = document.querySelector('#cart-subtotal'); const totalNode = document.querySelector('#cart-total'); const empty = document.querySelector('#cart-empty'); const summary = document.querySelector('#cart-summary'); const shippingNode=document.querySelector('#cart-shipping'); const shippingNote=document.querySelector('#shipping-offer-note'); let shippingSettings={}; try{shippingSettings=JSON.parse(localStorage.getItem('jijaAdminSettings')||'{}')||{};}catch{} const freeThreshold=Math.max(0,Number(shippingSettings.freeShippingThreshold??3500)||0), flatShippingFee=Math.max(0,Number(shippingSettings.shippingFee??50)||0);
   function draw() {
-    const cart = getCart().filter(item => findProduct(item.id));
+    let cart = getCart().filter(item => findProduct(item.id));
+    // Repair any stale cart quantities after stock was edited in the admin panel.
+    let cartWasAdjusted = false;
+    cart = cart.map(item => { const p=findProduct(item.id); const available=availableForCart(p,item.size); if (available !== Infinity && Number(item.quantity)>available) { cartWasAdjusted=true; return {...item,quantity:available}; } return item; }).filter(item=>Number(item.quantity)>0);
+    if (cartWasAdjusted) { saveCart(cart); showToast('Your bag was updated to match available stock.'); }
     if (!cart.length) { root.innerHTML = ''; empty.hidden = false; summary.hidden = true; if(subtotalNode)subtotalNode.textContent=money(0); if(shippingNode)shippingNode.textContent='—'; if(shippingNote)shippingNote.textContent='Free delivery above '+money(freeThreshold)+'. Below that, delivery is '+money(flatShippingFee)+'.'; if(totalNode)totalNode.textContent=money(0); updateCartCount(); return; }
     empty.hidden = true; summary.hidden = false;
     root.innerHTML = cart.map(item => { const p = findProduct(item.id); const price = p.salePrice || p.price; return `<article class="cart-item"><img src="${escapeHTML(p.image)}" alt="Sample placeholder image for ${escapeHTML(p.name)}"/><div class="cart-item-info"><a href="product.html?id=${p.id}" class="cart-item-title">${escapeHTML(p.name)}</a><p class="cart-item-meta">${escapeHTML(item.size || 'One Size')}${item.colour ? ` · ${escapeHTML(item.colour)}` : ''}</p><strong>${money(price)}</strong><button class="text-button remove-item" data-remove="${escapeHTML(item.key)}">Remove</button></div><div class="quantity-control"><button type="button" data-qty="${escapeHTML(item.key)}" data-delta="-1" aria-label="Decrease quantity">−</button><span>${item.quantity}</span><button type="button" data-qty="${escapeHTML(item.key)}" data-delta="1" aria-label="Increase quantity">＋</button></div><strong class="line-total">${money(price * item.quantity)}</strong></article>`; }).join('');
     const subtotal = cart.reduce((sum,item) => { const p = findProduct(item.id); return sum + (p.salePrice || p.price) * item.quantity; },0);
     const shipping=subtotal>=freeThreshold?0:flatShippingFee; subtotalNode.textContent = money(subtotal); if(shippingNode)shippingNode.textContent=shipping===0?'FREE':money(shipping); if(shippingNote)shippingNote.textContent=subtotal>=freeThreshold?'You qualify for free delivery!':'Add '+money(Math.max(0,freeThreshold-subtotal))+' more to unlock free delivery.'; totalNode.textContent = money(subtotal+shipping); updateCartCount();
     root.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => { saveCart(getCart().filter(i => i.key !== btn.dataset.remove)); draw(); }));
-    root.querySelectorAll('[data-qty]').forEach(btn => btn.addEventListener('click', () => { const cartNow = getCart(); const item = cartNow.find(i => i.key === btn.dataset.qty); if (item) item.quantity += Number(btn.dataset.delta); saveCart(cartNow.filter(i => i.quantity > 0)); draw(); }));
+    root.querySelectorAll('[data-qty]').forEach(btn => { const cartNow=getCart(); const item=cartNow.find(i=>i.key===btn.dataset.qty); const p=item&&findProduct(item.id); const available=item&&p?availableForCart(p,item.size):Infinity; if(item&&Number(btn.dataset.delta)>0&&available!==Infinity&&cartQuantityForSize(cartNow,item.id,item.size)>=available) {btn.disabled=true;btn.title='Maximum available stock reached';} btn.addEventListener('click',()=>{const latest=getCart();const target=latest.find(i=>i.key===btn.dataset.qty);if(!target)return;const product=findProduct(target.id);const delta=Number(btn.dataset.delta);if(delta>0){const limit=availableForCart(product,target.size);if(limit!==Infinity&&cartQuantityForSize(latest,target.id,target.size)+delta>limit){showToast('Only '+limit+' dress'+(limit===1?'':'es')+' available in size '+target.size);return;}}target.quantity+=delta;saveCart(latest.filter(i=>i.quantity>0));draw();}); });
   }
   draw();
   const upi = document.querySelector('#upi-id'); if (upi) upi.textContent = STORE_CONFIG.upiId;
@@ -353,6 +392,7 @@ function setupCart() {
   const form = document.querySelector('#checkout-form');
   form?.addEventListener('submit', event => {
     event.preventDefault(); const cart = getCart(); if (!cart.length) { showToast('Your bag is empty'); return; }
+    if (!validateCartStock(cart,true)) { draw(); return; }
     const data = new FormData(form); const name = String(data.get('customerName') || '').trim(); const phone = String(data.get('customerPhone') || '').trim(); const address = String(data.get('customerAddress') || '').trim(); const pin = String(data.get('customerPin') || '').trim();
     if (!name || !phone || !address || !pin) { showToast('Please complete all delivery details'); return; }
     const lines = cart.map(item => { const p = findProduct(item.id); return `• ${p.name} (${item.size || 'One Size'}${item.colour ? ', '+item.colour : ''}) × ${item.quantity} — ${money((p.salePrice || p.price) * item.quantity)}`; });
