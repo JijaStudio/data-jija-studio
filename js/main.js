@@ -193,8 +193,6 @@ function setupGlobalUI() {
 }
 
 function productCard(product) {
-  const sizeStock = product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : {};
-  const hasSizeStock = Object.keys(sizeStock).length > 0;
   const cardStock = trackedStock(product); const hasSizeStock = Object.keys(cardStock||{}).length > 0; const sizeStockHTML = hasSizeStock ? `<p class="size-stock-summary">${(product.sizes && product.sizes.length && !(product.sizes.length===1&&product.sizes[0]==='One Size') ? product.sizes : Object.keys(cardStock)).map(size => { const qty = Math.max(0,Math.floor(Number(cardStock[size] ?? 0))); const unit = isSareeProduct(product) ? (qty === 1 ? ' saree available' : ' sarees available') : (qty === 1 ? ' item available' : ' items available'); return `<span class="${qty > 0 ? 'size-in-stock' : 'size-out-stock'}">${escapeHTML(size)}: ${qty > 0 ? qty + unit : 'Out of stock'}</span>`; }).join('')}</p>` : '';
   return `<article class="product-card">
     <a class="product-image-wrap" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHTML(product.name)}">
