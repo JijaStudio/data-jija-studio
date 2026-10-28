@@ -93,3 +93,14 @@ html[data-home-animation="glow"] .category-card:hover,html[data-home-animation="
 @keyframes jijaGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes jijaShimmer{0%,100%{filter:brightness(1)}50%{filter:brightness(1.07)}}
 @media(prefers-reduced-motion:reduce){html[data-home-animation] body{animation:none!important;background-size:auto!important}html[data-home-animation] .jija-animate-visible{animation:none!important;filter:none!important;box-shadow:none!important}}
+
+/* Admin festival themes: preview swatches and seasonal ornaments. */
+.festival-preview{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--white)}
+.festival-preview .festival-swatch{display:inline-block;width:25px;height:25px;border-radius:50%;border:1px solid #00000018}
+.festival-preview strong{font-size:12px;color:var(--green);margin-left:4px}
+.festival-decor{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;gap:clamp(8px,3vw,22px);padding:10px 12px 0;color:var(--green);font-size:clamp(18px,3vw,28px);letter-spacing:.12em;text-align:center;filter:drop-shadow(0 2px 2px #00000010)}
+.festival-decor[hidden]{display:none}
+html[data-festival-theme="active"] .announcement{border-bottom:2px solid var(--gold)}
+html[data-festival-theme="active"] .hero{border-bottom:1px solid color-mix(in srgb,var(--gold) 45%,transparent)}
+html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(in srgb,var(--gold) 50%,transparent)}
+@media(prefers-reduced-motion:reduce){.festival-decor{filter:none}}
