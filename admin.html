@@ -141,7 +141,7 @@ const FESTIVAL_THEMES={
  wedding:{label:'Wedding / Celebration · Champagne, rose & plum',palette:'wedding',colors:['#6d365e','#d98c9a','#d7bd83','#fff6ee']},
  newyear:{label:'New Year · Midnight navy, silver & gold',palette:'newyear',colors:['#111b3c','#7c879e','#d8bd70','#f8f7f2']}
 };
-function updateFestivalPreview(){const key=$('h-festival')?.value||'none',theme=FESTIVAL_THEMES[key]||FESTIVAL_THEMES.none,preview=$('festival-preview');if(!preview)return;preview.querySelectorAll('.festival-swatch').forEach((node,i)=>{node.style.background=theme.colors[i]||'#e8e3d9';});preview.querySelector('strong').textContent=theme.label;if(key!=='none'&&theme.palette)$('h-palette').value=theme.palette;}
+function updateFestivalPreview(){const key=$('h-festival')?.value||'none',theme=FESTIVAL_THEMES[key]||FESTIVAL_THEMES.none,preview=$('festival-preview');if(!preview)return;preview.querySelectorAll('.festival-swatch').forEach((node,i)=>{node.style.background=theme.colors[i]||'#e8e3d9';});preview.querySelector('strong').textContent=theme.label;}
 $('h-festival').addEventListener('change',updateFestivalPreview);
 $('h-palette').addEventListener('change',()=>{if($('h-festival').value!=='none'){$('h-festival').value='none';updateFestivalPreview();}});
 function showStatus(id,msg){$(id).textContent=msg;}
