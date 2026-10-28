@@ -191,12 +191,12 @@ function productCard(product) {
   return `<article class="product-card">
     <a class="product-image-wrap" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHTML(product.name)}">
       <img src="${escapeHTML(product.image)}" alt="Sample placeholder image for ${escapeHTML(product.name)} from Jija Studio" loading="lazy">
-      ${product.badge ? `<span class="product-badge">${escapeHTML(product.badge)}</span>` : ''}
+      ${product.badge ? `<span class="product-badge">${escapeHTML(product.badge)}</span>` : ''}${product.price > 0 && product.salePrice > 0 && product.salePrice < product.price ? `<span class="product-discount">${Math.round((product.price-product.salePrice)/product.price*100)}% OFF</span>` : ''}
       <button class="quick-add" type="button" data-add="${product.id}" aria-label="Add ${escapeHTML(product.name)} to cart">＋</button>
     </a>
     <div class="product-info"><p class="product-category">${escapeHTML(product.category)}</p>
       <a class="product-name" href="product.html?id=${encodeURIComponent(product.id)}">${escapeHTML(product.name)}</a>
-      <div class="price-line"><strong>${money(product.salePrice || product.price)}</strong>${product.salePrice && product.salePrice < product.price ? `<del>${money(product.price)}</del>` : ''}</div>
+      <div class="price-line"><strong>${money(product.salePrice || product.price)}</strong>${product.salePrice && product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="discount-inline">${Math.round((product.price-product.salePrice)/product.price*100)}% OFF</span>` : ''}</div>
       <p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} reviews)</span></p>
     </div>
   </article>`;
@@ -290,12 +290,12 @@ function setupProduct() {
     (galleryImages.length > 1 ? '<div class="detail-thumbnails">' + galleryImages.map((src,i) => '<button type="button" class="detail-thumb' + (i===0?' active':'') + '" data-gallery-image="' + i + '" aria-label="View product image ' + (i+1) + '"><img src="' + escapeHTML(src) + '" alt=""></button>').join('') + '</div>' : '') +
     (product.video ? '<video class="detail-product-video" controls playsinline preload="metadata" src="' + escapeHTML(product.video) + '"></video>' : '') + imageNote + '</div>';
   root.innerHTML = galleryHTML + `<div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
-  <div class="detail-price">${money(product.salePrice || product.price)} ${product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="save-tag">Special price</span>` : ''}</div>
+  <div class="detail-price">${money(product.salePrice || product.price)} ${product.salePrice > 0 && product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="save-tag">${Math.round((product.price-product.salePrice)/product.price*100)}% OFF · Save ${money(product.price-product.salePrice)}</span>` : ''}</div>
   <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note">${product.stock > 0 ? `✓ In stock (${product.stock} shown in demo)` : 'Currently unavailable'}</p>
   ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>`<option>${escapeHTML(s)}</option>`).join('')}</select>` : ''}
   <label class="field-label" for="product-colour">Colour</label><select id="product-colour" class="form-control">${product.colours.map(c=>`<option>${escapeHTML(c)}</option>`).join('')}</select>
   <div class="detail-actions"><button class="button button-primary" id="detail-add">Add to bag</button><a class="button button-outline" target="_blank" rel="noopener" href="${whatsappLink(`Hello Jija Studio, I am interested in ${product.name} (Product ID: ${product.id}). Please share details.`)}">Ask on WhatsApp</a></div>
-  <div class="product-assurance"><p>✦ Thoughtfully selected styles</p><p>↗ Shipping details confirmed at order</p><p>♡ Need help? Our team can assist on WhatsApp</p></div></div>`;
+  <div class="product-assurance"><p>🚚 <strong>Estimated delivery:</strong> ${escapeHTML(product.deliveryTime || '3–5 days')}</p><p>↩ <strong>Returns:</strong> ${product.returnPolicy==='returnable'?'Returnable':product.returnPolicy==='exchange-only'?'Exchange only':'Non-returnable'}</p><p>💳 <strong>Payment:</strong> ${product.paymentPolicy==='online-cod'?'Online payment or Cash on Delivery':product.paymentPolicy==='cod-only'?'Cash on Delivery only':'Online payment only'}</p><p>♡ Need help? Our team can assist on WhatsApp</p></div></div>`;
   document.querySelector('#detail-add').addEventListener('click', () => addToCart(product.id, 1, document.querySelector('#product-size')?.value || 'One Size', document.querySelector('#product-colour')?.value || ''));
   root.querySelectorAll('[data-gallery-image]').forEach(button => button.addEventListener('click', () => { const idx=Number(button.dataset.galleryImage); const main=root.querySelector('#detail-main-image'); if(main&&galleryImages[idx]) main.src=galleryImages[idx]; root.querySelectorAll('[data-gallery-image]').forEach(b=>b.classList.toggle('active',b===button)); }));
   renderProducts(document.querySelector('#related-products'), products.filter(p => p.category === product.category && p.id !== product.id).slice(0,4));
