@@ -157,12 +157,14 @@ function renderReviewAdmin(){const list=$('review-admin-list');if(!list)return;c
 async function persistReviews(message){const old=safeRead(SETTINGS_KEY,{})||{};const data={...old,...settings,reviews:getReviews()};try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(data));if(typeof window.jijaSaveFirebaseSettings!=='function')throw new Error('Firebase is not connected.');await window.jijaSaveFirebaseSettings(data);settings=data;$('review-status').textContent=message;renderReviewAdmin();window.dispatchEvent(new CustomEvent('jija:reviews-updated'));}catch(e){$('review-status').textContent='Could not sync reviews: '+(e.message||'Firebase error');}}
 $('review-save')?.addEventListener('click',async()=>{const name=$('review-name').value.trim(),text=$('review-text').value.trim(),rating=Number($('review-rating').value)||5;if(!name||!text){$('review-status').textContent='Enter customer name and review.';return;}let reviews=getReviews().slice();if(editingReviewId!==null){reviews=reviews.map(r=>String(r.id)===String(editingReviewId)?{...r,name,text,rating}:r);}else{reviews.push({id:'review-'+Date.now(),name,text,rating});}settings.reviews=reviews;editingReviewId=null;$('review-name').value='';$('review-text').value='';$('review-rating').value='5';$('review-save').textContent='Add review';$('review-cancel').hidden=true;await persistReviews('Review saved.');});
 $('review-cancel')?.addEventListener('click',()=>{editingReviewId=null;$('review-name').value='';$('review-text').value='';$('review-rating').value='5';$('review-save').textContent='Add review';$('review-cancel').hidden=true;$('review-status').textContent='Edit cancelled.';});
-renderReviewAdmin();
 
 function split(v){return v.split(',').map(x=>x.trim()).filter(Boolean);}
 function readSettings(){return safeRead(SETTINGS_KEY,{})||{};}
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 let settings=readSettings();
+// Render reviews only after settings has been initialized; calling it earlier
+// hits the temporal dead zone and stops the entire admin script from starting.
+renderReviewAdmin();
 function categories(){return [...new Set([...DEFAULT_CATEGORIES,...(settings.categories||[]),...Object.keys(settings.subcategories||{})])];}
 function renderCategories(selectedValue){const select=$('p-category');const current=selectedValue||select.value;select.innerHTML=categories().map(v=>'<option value="'+escapeText(v)+'">'+escapeText(v)+'</option>').join('');if(current&&categories().includes(current))select.value=current;renderSubcategories();}
 function renderSubcategories(selectedValue){const parent=$('p-category').value;const list=(settings.subcategories||{})[parent]||[];const select=$('p-subcategory');select.innerHTML='<option value="">No subcategory</option>'+list.map(v=>'<option value="'+escapeText(v)+'">'+escapeText(v)+'</option>').join('');if(selectedValue&&list.includes(selectedValue))select.value=selectedValue;}
