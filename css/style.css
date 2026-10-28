@@ -104,3 +104,10 @@ html[data-festival-theme="active"] .announcement{border-bottom:2px solid var(--g
 html[data-festival-theme="active"] .hero{border-bottom:1px solid color-mix(in srgb,var(--gold) 45%,transparent)}
 html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(in srgb,var(--gold) 50%,transparent)}
 @media(prefers-reduced-motion:reduce){.festival-decor{filter:none}}
+
+/* Instagram profile link in the storefront footer */
+.instagram-link{display:flex;align-items:center;gap:9px;width:fit-content;max-width:100%;margin-top:12px;color:var(--white);text-decoration:none;font-size:14px;line-height:1.4;transition:color .2s ease,transform .2s ease}
+.instagram-link svg{flex:0 0 auto}
+.instagram-link strong{display:block;color:var(--gold);font-weight:700}
+.instagram-link:hover,.instagram-link:focus-visible{color:var(--gold);transform:translateY(-1px)}
+.instagram-link:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:4px}
