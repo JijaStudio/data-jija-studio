@@ -6,8 +6,7 @@ const SETTINGS_KEY = 'jijaAdminSettings';
 const HYDRATED_KEY = 'jijaStorefrontFirebaseHydrated';
 
 function isDemoProduct(p) {
-  return !p || p.placeholder === true || String(p.id) === '121' ||
-    /demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || ''));
+  return !p || p.placeholder === true;
 }
 
 async function hydrateStorefront() {
