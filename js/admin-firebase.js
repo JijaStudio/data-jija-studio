@@ -33,14 +33,20 @@ function localJson(key, fallback) {
   }
 }
 
+async function writeFirebase(path, value) {
+  // Serialize every write so a background localStorage sync cannot race an explicit save.
+  const write = writeQueue.catch(() => {}).then(() => set(ref(database, path), value));
+  writeQueue = write;
+  await write;
+}
+
 async function syncLocalToFirebase(key, rawValue) {
   if (!readyToSync || !auth.currentUser) return;
   let value;
   try { value = JSON.parse(rawValue); } catch { return; }
   const path = key === PRODUCT_KEY ? 'products' : 'settings';
-  writeQueue = writeQueue.catch(() => {}).then(() => set(ref(database, path), value));
   try {
-    await writeQueue;
+    await writeFirebase(path, value);
     status('Connected to Firebase · changes synced');
   } catch (error) {
     console.error('Firebase write failed:', error);
@@ -48,16 +54,16 @@ async function syncLocalToFirebase(key, rawValue) {
   }
 }
 
-// Explicit save API for admin buttons: wait for Firebase to confirm the write.
+// Explicit save APIs use the same write queue as automatic sync and return only after Firebase confirms the write.
 window.jijaSaveFirebaseSettings = async function(value) {
   if (!auth.currentUser || !readyToSync) throw new Error('Firebase is not connected. Please wait for the connected status and try again.');
-  await set(ref(database, 'settings'), value);
+  await writeFirebase('settings', value);
   return true;
 };
 
 window.jijaSaveFirebaseProducts = async function(value) {
   if (!auth.currentUser || !readyToSync) throw new Error('Firebase is not connected. Please wait for the connected status and try again.');
-  await set(ref(database, 'products'), value);
+  await writeFirebase('products', value);
   status('Connected to Firebase · products synced');
   return true;
 };
