@@ -123,3 +123,10 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
 .category-card p{font-size:11px;line-height:1.35;overflow-wrap:anywhere}
 @media(min-width:700px){.category-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.category-card{aspect-ratio:4/5}}
 @media(max-width:360px){.category-grid{gap:9px}.category-card{aspect-ratio:3/4}.category-card img{padding:5px}.category-card>div{padding:9px}.category-card h3{font-size:16px}}
+
+
+/* Collection tiles: use a taller portrait frame so model heads are not crowded by the top edge. */
+.category-grid .category-card{height:auto!important;min-height:0!important;aspect-ratio:4/5!important}
+.category-grid .category-card img{object-fit:contain!important;object-position:center center!important;transform:none}
+.category-grid .category-card:hover img{transform:scale(1.005)}
+@media(min-width:700px){.category-grid .category-card{aspect-ratio:4/5!important}}
