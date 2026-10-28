@@ -36,7 +36,7 @@ function applyAdminCatalogueAndPaymentSettings() {
     const deleted = new Set(savedProducts.filter(p => p && p._deleted).map(p => String(p.id)));
     const custom = savedProducts.filter(p => p && !p._deleted && !isDemoProduct(p)), ids = new Set(custom.map(p => String(p.id)));
     for (let i = products.length - 1; i >= 0; i--) if (deleted.has(String(products[i].id)) || ids.has(String(products[i].id))) products.splice(i, 1);
-    custom.filter(p => p.published !== false).forEach(p => { const item = {...p,id:String(p.id),image:p.image||(p.images&&p.images[0])||'images/placeholder-fashion.svg'}; item.images=Array.isArray(p.images)&&p.images.length?p.images:[item.image]; item.video=p.video||''; item.sizes=p.sizes||['One Size']; item.colours=p.colours||['Default']; item.price=Number(p.price)||0; item.salePrice=Number(p.salePrice)||item.price; item.stock=Number(p.stock)||0; item.rating=Number(p.rating)||0; item.reviewCount=Number(p.reviewCount)||0; products.unshift(item); });
+    custom.filter(p => p.published !== false).forEach(p => { const item = {...p,id:String(p.id),image:p.image||(p.images&&p.images[0])||'images/placeholder-fashion.svg'}; item.images=Array.isArray(p.images)&&p.images.length?p.images:[item.image]; item.video=p.video||''; item.sizes=p.sizes||['One Size']; item.colours=p.colours||['Default']; item.price=Number(p.price)||0; item.salePrice=Number(p.salePrice)||item.price; item.stock=Number(p.stock)||0; item.rating=Number(p.rating)||0; item.reviewCount=Number(p.reviewCount)||0; item.published=p.published !== false; products.unshift(item); });
   }
 }
 const JIJA_PALETTES = {
@@ -236,7 +236,7 @@ function showToast(message) {
 
 function setupHome() {
   setupHomepageAnimations();
-  renderProducts(document.querySelector('#featured-products'), products.filter(p => p.published).slice(0, 8));
+  renderProducts(document.querySelector('#featured-products'), products.filter(p => p.published !== false).slice(0, 8));
   const search = document.querySelector('#hero-search');
   if (search) search.addEventListener('submit', event => { event.preventDefault(); const q = search.querySelector('input').value.trim(); location.href = `shop.html?q=${encodeURIComponent(q)}`; });
 }
