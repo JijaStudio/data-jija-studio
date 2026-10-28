@@ -1,28 +1,33 @@
 import { database } from './firebase-config.js';
-import { get, ref } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+import { onValue, ref } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
 function normalizeList(raw) {
   const list = Array.isArray(raw) ? raw : Object.values(raw || {});
   return list.filter(p => p && typeof p === 'object');
 }
 
-async function hydrateStorefront() {
-  try {
-    const [productsSnapshot, settingsSnapshot] = await Promise.all([
-      get(ref(database, 'products')),
-      get(ref(database, 'settings'))
-    ]);
-    if (productsSnapshot.exists()) {
-      window.jijaFirebaseProducts = normalizeList(productsSnapshot.val());
-    }
-    if (settingsSnapshot.exists()) {
-      window.jijaFirebaseSettings = settingsSnapshot.val() || {};
-    }
-    // Do not copy the full catalogue into localStorage: product images may exceed
-    // the browser's quota. Keep Firebase data in memory and re-render the page.
-    window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded'));
-  } catch (error) {
-    console.warn('Jija Studio shared catalogue/settings could not be loaded from Firebase. Showing cached/demo products instead.', error);
-  }
+let gotProducts = false;
+let gotSettings = false;
+
+function notifyStorefront() {
+  // Wait until both Firebase reads have returned before rendering, so the
+  // catalogue and store settings are applied together on first load.
+  if (!gotProducts || !gotSettings) return;
+  window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded'));
 }
-void hydrateStorefront();
+
+onValue(ref(database, 'products'), snapshot => {
+  window.jijaFirebaseProducts = snapshot.exists() ? normalizeList(snapshot.val()) : [];
+  gotProducts = true;
+  notifyStorefront();
+}, error => {
+  console.warn('Jija Studio could not read products from Firebase.', error);
+});
+
+onValue(ref(database, 'settings'), snapshot => {
+  window.jijaFirebaseSettings = snapshot.exists() ? (snapshot.val() || {}) : {};
+  gotSettings = true;
+  notifyStorefront();
+}, error => {
+  console.warn('Jija Studio could not read settings from Firebase.', error);
+});
