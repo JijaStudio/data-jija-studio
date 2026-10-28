@@ -138,7 +138,22 @@ function applyAdminHomepageSettings() {
     const node = document.querySelector(selector);
     if (node && value) node.textContent = value;
   });
-  if (Array.isArray(settings.collectionCards)) settings.collectionCards.forEach((card, i) => { const link=document.querySelector('[data-collection-card="'+i+'"]'); const img=document.querySelector('[data-collection-image="'+i+'"]'); const title=document.querySelector('[data-collection-title="'+i+'"]'); const subtitle=document.querySelector('[data-collection-subtitle="'+i+'"]'); if(!link)return; if(card.title&&title)title.textContent=card.title; if(card.subtitle&&subtitle)subtitle.textContent=card.subtitle; if(card.image&&img){img.src=card.image;img.alt=(card.title||'Jija Studio')+' collection';} if(card.category)link.href='shop.html?category='+encodeURIComponent(card.category); });
+  if (Array.isArray(settings.collectionCards)) {
+    const grid=document.querySelector('.category-grid');
+    if(grid){
+      const cards=settings.collectionCards.filter(card=>card&&String(card.title||'').trim()&&String(card.category||'').trim());
+      if(cards.length){
+        grid.innerHTML=cards.map((card,i)=>{
+          const title=escapeHTML(String(card.title||'').trim());
+          const subtitle=escapeHTML(String(card.subtitle||'').trim());
+          const category=String(card.category||'').trim();
+          const image=String(card.image||'images/placeholder-fashion.svg').trim();
+          return '<a class="category-card" data-collection-card="'+i+'" href="shop.html?category='+encodeURIComponent(category)+'"><img data-collection-image="'+i+'" src="'+escapeHTML(image)+'" alt="'+title+' collection" loading="lazy"><div><h3 data-collection-title="'+i+'">'+title+'</h3><p data-collection-subtitle="'+i+'">'+subtitle+'</p></div></a>';
+        }).join('');
+        grid.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>{if(!img.dataset.fallbackApplied){img.dataset.fallbackApplied='true';img.src='images/placeholder-fashion.svg';}}, {once:true}));
+      }
+    }
+  }
   const visual = document.querySelector('.hero-visual');
   if (visual && settings.bannerSrc) {
     const heroGrid = visual.closest('.hero-grid');
