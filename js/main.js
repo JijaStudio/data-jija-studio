@@ -225,7 +225,17 @@ function renderProducts(container, list) {
   });
   const wishlistIds=readWishlist();container.querySelectorAll('[data-wishlist]').forEach(button=>{const id=String(button.dataset.wishlist);const saved=wishlistIds.includes(id);button.setAttribute('aria-pressed',String(saved));button.textContent=saved?'♥':'♡';button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();toggleWishlist(id);button.setAttribute('aria-pressed',String(readWishlist().includes(id)));button.textContent=readWishlist().includes(id)?'♥':'♡';renderWishlist();});});
   container.querySelectorAll('[data-add]').forEach(button => button.addEventListener('click', event => {
-    event.preventDefault(); event.stopPropagation(); addToCart(button.dataset.add, 1); button.textContent = '✓';
+    event.preventDefault(); event.stopPropagation();
+    const product=findProduct(button.dataset.add);
+    const stockMap=product?.stockBySize&&typeof product.stockBySize==='object'?product.stockBySize:null;
+    if(stockMap&&Object.keys(stockMap).length){
+      const sizes=Array.isArray(product.sizes)?product.sizes:Object.keys(stockMap);
+      const available=sizes.find(size=>Number(stockMap[size]??0)>0);
+      if(!available){showToast('This product is currently out of stock');return;}
+      if(sizes.length>1){location.href='product.html?id='+encodeURIComponent(product.id);return;}
+      addToCart(product.id,1,available);
+    }else addToCart(button.dataset.add,1);
+    button.textContent = '✓';
     setTimeout(() => { if (button.isConnected) button.textContent = '＋'; }, 900);
   }));
 }
