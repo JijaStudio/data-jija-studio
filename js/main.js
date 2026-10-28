@@ -109,7 +109,7 @@ function applyAdminHomepageSettings() {
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
   applyAdminVisualPreferences(settings);
-  document.querySelectorAll('.brand-logo').forEach(img => { img.src = 'images/jija-studio-logo.svg'; img.alt = 'Jija Studio logo'; });
+  document.querySelectorAll('.brand-logo').forEach(img => { img.src = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3K9B8QWO8ldsXECgkrcRH2T3svS/4b019931-f02f-4c29-b9eb-172256273e85.jpg'; img.alt = 'Jija Studio logo'; });
   const threshold = Math.max(0, Number(settings.freeShippingThreshold ?? 3500) || 0);
   const shippingFee = Math.max(0, Number(settings.shippingFee ?? 50) || 0);
   const offerBanner = document.querySelector('#shipping-offer-banner');
