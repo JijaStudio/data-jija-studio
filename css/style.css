@@ -177,3 +177,7 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
 .review-form-fields input,.review-form-fields select,.review-form-fields textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fffefa;font:inherit}
 .review-full{grid-column:1/-1}
 @media(max-width:700px){.review-grid{grid-template-columns:1fr}.review-form-fields{grid-template-columns:1fr}.review-full{grid-column:auto}.wishlist-header-link span{display:none}}
+
+
+/* Per-size stock visibility on product cards */
+.size-stock-summary{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0;font-size:10px;line-height:1.35}.size-stock-summary span{display:inline-block;padding:4px 6px;border-radius:4px;background:#edf3ed;color:#174d38}.size-stock-summary .size-out-stock{background:#f8eaea;color:#9d2929}.form-control option:disabled{color:#999}
