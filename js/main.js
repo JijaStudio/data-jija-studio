@@ -52,22 +52,30 @@ function applyAdminVisualPreferences(settings) {
   Object.entries(palette).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
   document.documentElement.dataset.homeAnimation = ['none','fade','slide','zoom','rise','flip','blur','bounce','rotate','glow','color-pulse','gradient-flow','shimmer'].includes(settings.animationStyle) ? settings.animationStyle : 'fade';
 }
+let homepageAnimationObserver = null;
 function setupHomepageAnimations() {
   const mode = document.documentElement.dataset.homeAnimation || 'fade';
   const targets = document.querySelectorAll('main .hero-copy, main .hero-visual, main .trust-item, main .section-heading, main .category-card, main .product-card, main .story-copy, main .newsletter-inner');
+  if (homepageAnimationObserver) homepageAnimationObserver.disconnect();
+  targets.forEach(node => {
+    node.classList.remove('jija-animate', 'jija-animate-visible');
+    node.style.animation = '';
+  });
   if (mode === 'none' || !('IntersectionObserver' in window)) {
-    targets.forEach(node => { node.classList.remove('jija-animate'); node.classList.add('jija-animate-visible'); });
+    targets.forEach(node => node.classList.add('jija-animate-visible'));
     return;
   }
-  targets.forEach(node => { if (!node.classList.contains('jija-animate-visible')) node.classList.add('jija-animate'); });
-  const observer = new IntersectionObserver(entries => {
+  homepageAnimationObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
       entry.target.classList.add('jija-animate-visible');
-      observer.unobserve(entry.target);
+      homepageAnimationObserver.unobserve(entry.target);
     });
-  }, {threshold:0.12});
-  targets.forEach(node => observer.observe(node));
+  }, {threshold:0.08});
+  targets.forEach(node => {
+    node.classList.add('jija-animate');
+    homepageAnimationObserver.observe(node);
+  });
 }
 
 function applyAdminHomepageSettings() {
