@@ -196,7 +196,7 @@ function productCard(product) {
     <a class="product-image-wrap" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHTML(product.name)}">
       <img src="${escapeHTML(product.image)}" alt="Sample placeholder image for ${escapeHTML(product.name)} from Jija Studio" loading="lazy">
       ${product.badge ? `<span class="product-badge">${escapeHTML(product.badge)}</span>` : ''}${product.price > 0 && product.salePrice > 0 && product.salePrice < product.price ? `<span class="product-discount">${Math.round((product.price-product.salePrice)/product.price*100)}% OFF</span>` : ''}
-      <button class="quick-add" type="button" data-add="${product.id}" aria-label="Add ${escapeHTML(product.name)} to cart">＋</button>
+      <button class="product-wishlist" type="button" data-wishlist="${escapeHTML(product.id)}" aria-label="Add ${escapeHTML(product.name)} to wishlist" aria-pressed="false">♡</button><button class="quick-add" type="button" data-add="${product.id}" aria-label="Add ${escapeHTML(product.name)} to cart">＋</button>
     </a>
     <div class="product-info"><p class="product-category">${escapeHTML(product.category)}</p>
       <a class="product-name" href="product.html?id=${encodeURIComponent(product.id)}">${escapeHTML(product.name)}</a>
@@ -218,6 +218,7 @@ function renderProducts(container, list) {
       }
     }, { once: true });
   });
+  const wishlistIds=readWishlist();container.querySelectorAll('[data-wishlist]').forEach(button=>{const id=String(button.dataset.wishlist);const saved=wishlistIds.includes(id);button.setAttribute('aria-pressed',String(saved));button.textContent=saved?'♥':'♡';button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();toggleWishlist(id);button.setAttribute('aria-pressed',String(readWishlist().includes(id)));button.textContent=readWishlist().includes(id)?'♥':'♡';renderWishlist();});});
   container.querySelectorAll('[data-add]').forEach(button => button.addEventListener('click', event => {
     event.preventDefault(); event.stopPropagation(); addToCart(button.dataset.add, 1); button.textContent = '✓';
     setTimeout(() => { if (button.isConnected) button.textContent = '＋'; }, 900);
@@ -237,6 +238,14 @@ function showToast(message) {
   if (!toast) { toast = document.createElement('div'); toast.className = 'toast'; toast.setAttribute('role','status'); document.body.appendChild(toast); }
   toast.textContent = message; toast.classList.add('visible'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('visible'), 2200);
 }
+
+ 
+const WISHLIST_KEY='jijaWishlist';
+function readWishlist(){try{return JSON.parse(localStorage.getItem(WISHLIST_KEY)||'[]').map(String);}catch{return [];}}
+function toggleWishlist(id){const ids=readWishlist();const next=ids.includes(String(id))?ids.filter(x=>x!==String(id)):[...ids,String(id)];localStorage.setItem(WISHLIST_KEY,JSON.stringify(next));}
+function renderWishlist(){const root=document.querySelector('#wishlist-products');if(!root)return;const ids=readWishlist();const items=ids.map(id=>findProduct(id)).filter(Boolean);if(!items.length){root.innerHTML='<p class="empty-state">Your wishlist is empty. Tap the heart on a product to save it here.</p>';return;}renderProducts(root,items);}
+function renderHomepageReviews(){const root=document.querySelector('#homepage-reviews');if(!root)return;let settings={};try{settings=JSON.parse(localStorage.getItem('jijaAdminSettings')||'{}')||{};}catch{}const reviews=Array.isArray(settings.reviews)?settings.reviews:[];root.innerHTML=reviews.length?reviews.map(r=>'<article class="review-card"><div class="review-stars" aria-label="'+Math.max(1,Math.min(5,Number(r.rating)||5))+' out of 5 stars">'+('★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5))))+('☆'.repeat(5-Math.max(1,Math.min(5,Number(r.rating)||5))))+'</div><h3>'+escapeHTML(r.name||'Customer')+'</h3><p>'+escapeHTML(r.text||'')+'</p></article>').join(''):'<p>No reviews published yet. We welcome your feedback!</p>';}
+function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'919673960373';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
 
 function setupHome() {
   setupHomepageAnimations();
@@ -339,7 +348,7 @@ function setupContact() {
 
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupGlobalUI(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
+    applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupGlobalUI(); setupWishlistAndReviews(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
     document.querySelectorAll('[data-check-pin]').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); const pin = form.querySelector('input').value.trim(); const output = form.querySelector('[data-pin-result]'); output.textContent = /^\d{6}$/.test(pin) ? 'PIN code format looks valid. Actual delivery availability must be confirmed by the store.' : 'Please enter a valid 6-digit Indian PIN code.'; }));
   } catch (error) {
     console.error('Jija Studio storefront initialisation failed:', error);
