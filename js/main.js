@@ -109,6 +109,10 @@ function applyAdminHomepageSettings() {
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
   applyAdminVisualPreferences(settings);
+  const threshold = Math.max(0, Number(settings.freeShippingThreshold ?? 3500) || 0);
+  const shippingFee = Math.max(0, Number(settings.shippingFee ?? 50) || 0);
+  const offerBanner = document.querySelector('#shipping-offer-banner');
+  if (offerBanner) offerBanner.innerHTML = '<span class="shipping-offer-icon">🚚</span><span><strong>Free delivery on orders above ' + money(threshold) + '</strong><small>Orders below ' + money(threshold) + ' have a flat ' + money(shippingFee) + ' delivery charge.</small></span>';
   const announcement = document.querySelector('[data-admin-announcement]');
   if (announcement && settings.announcement) announcement.textContent = settings.announcement;
   if (settings.whatsappNumber && /^\d{10}$/.test(settings.whatsappNumber)) {
@@ -302,14 +306,14 @@ function setupProduct() {
 }
 function setupCart() {
   const root = document.querySelector('#cart-items'); if (!root) return;
-  const subtotalNode = document.querySelector('#cart-subtotal'); const totalNode = document.querySelector('#cart-total'); const empty = document.querySelector('#cart-empty'); const summary = document.querySelector('#cart-summary');
+  const subtotalNode = document.querySelector('#cart-subtotal'); const totalNode = document.querySelector('#cart-total'); const empty = document.querySelector('#cart-empty'); const summary = document.querySelector('#cart-summary'); const shippingNode=document.querySelector('#cart-shipping'); const shippingNote=document.querySelector('#shipping-offer-note'); let shippingSettings={}; try{shippingSettings=JSON.parse(localStorage.getItem('jijaAdminSettings')||'{}')||{};}catch{} const freeThreshold=Math.max(0,Number(shippingSettings.freeShippingThreshold??3500)||0), flatShippingFee=Math.max(0,Number(shippingSettings.shippingFee??50)||0);
   function draw() {
     const cart = getCart().filter(item => findProduct(item.id));
     if (!cart.length) { root.innerHTML = ''; empty.hidden = false; summary.hidden = true; if(subtotalNode)subtotalNode.textContent=money(0); if(totalNode)totalNode.textContent=money(0); updateCartCount(); return; }
     empty.hidden = true; summary.hidden = false;
     root.innerHTML = cart.map(item => { const p = findProduct(item.id); const price = p.salePrice || p.price; return `<article class="cart-item"><img src="${escapeHTML(p.image)}" alt="Sample placeholder image for ${escapeHTML(p.name)}"/><div class="cart-item-info"><a href="product.html?id=${p.id}" class="cart-item-title">${escapeHTML(p.name)}</a><p class="cart-item-meta">${escapeHTML(item.size || 'One Size')}${item.colour ? ` · ${escapeHTML(item.colour)}` : ''}</p><strong>${money(price)}</strong><button class="text-button remove-item" data-remove="${escapeHTML(item.key)}">Remove</button></div><div class="quantity-control"><button type="button" data-qty="${escapeHTML(item.key)}" data-delta="-1" aria-label="Decrease quantity">−</button><span>${item.quantity}</span><button type="button" data-qty="${escapeHTML(item.key)}" data-delta="1" aria-label="Increase quantity">＋</button></div><strong class="line-total">${money(price * item.quantity)}</strong></article>`; }).join('');
     const subtotal = cart.reduce((sum,item) => { const p = findProduct(item.id); return sum + (p.salePrice || p.price) * item.quantity; },0);
-    subtotalNode.textContent = money(subtotal); totalNode.textContent = money(subtotal); updateCartCount();
+    const shipping=subtotal>=freeThreshold?0:flatShippingFee; subtotalNode.textContent = money(subtotal); if(shippingNode)shippingNode.textContent=shipping===0?'FREE':money(shipping); if(shippingNote)shippingNote.textContent=subtotal>=freeThreshold?'You qualify for free delivery!':'Add '+money(Math.max(0,freeThreshold-subtotal))+' more to unlock free delivery.'; totalNode.textContent = money(subtotal+shipping); updateCartCount();
     root.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => { saveCart(getCart().filter(i => i.key !== btn.dataset.remove)); draw(); }));
     root.querySelectorAll('[data-qty]').forEach(btn => btn.addEventListener('click', () => { const cartNow = getCart(); const item = cartNow.find(i => i.key === btn.dataset.qty); if (item) item.quantity += Number(btn.dataset.delta); saveCart(cartNow.filter(i => i.quantity > 0)); draw(); }));
   }
@@ -322,7 +326,7 @@ function setupCart() {
     const data = new FormData(form); const name = String(data.get('customerName') || '').trim(); const phone = String(data.get('customerPhone') || '').trim(); const address = String(data.get('customerAddress') || '').trim(); const pin = String(data.get('customerPin') || '').trim();
     if (!name || !phone || !address || !pin) { showToast('Please complete all delivery details'); return; }
     const lines = cart.map(item => { const p = findProduct(item.id); return `• ${p.name} (${item.size || 'One Size'}${item.colour ? ', '+item.colour : ''}) × ${item.quantity} — ${money((p.salePrice || p.price) * item.quantity)}`; });
-    const total = cart.reduce((sum,item) => sum + (findProduct(item.id).salePrice || findProduct(item.id).price) * item.quantity,0);
+    const subtotal = cart.reduce((sum,item) => sum + (findProduct(item.id).salePrice || findProduct(item.id).price) * item.quantity,0); const shipping=subtotal>=freeThreshold?0:flatShippingFee; const total=subtotal+shipping;
     const message = `Hello Jija Studio! I'd like to place an order.\n\nORDER ITEMS\n${lines.join('\n')}\n\nTotal: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability, shipping charges and payment instructions. I understand this message is an order request, not a confirmed payment.`;
     window.open(whatsappLink(message), '_blank', 'noopener,noreferrer');
     const status = document.querySelector('#checkout-message'); if(status) { status.hidden = false; status.textContent = 'WhatsApp opened with your order request. Send the message to the store and wait for confirmation. Your cart has not been cleared.'; }
