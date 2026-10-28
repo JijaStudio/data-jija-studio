@@ -195,7 +195,7 @@ function setupGlobalUI() {
 function productCard(product) {
   const sizeStock = product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : {};
   const hasSizeStock = Object.keys(sizeStock).length > 0;
-  const sizeStockHTML = hasSizeStock ? `<p class="size-stock-summary">${(product.sizes || Object.keys(sizeStock)).map(size => { const qty = Math.max(0,Math.floor(Number(sizeStock[size] ?? 0))); return `<span class="${qty > 0 ? 'size-in-stock' : 'size-out-stock'}">${escapeHTML(size)}: ${qty > 0 ? qty + (qty === 1 ? ' dress available' : ' dresses available') : 'Out of stock'}</span>`; }).join('')}</p>` : '';
+  const sizeStockHTML = hasSizeStock ? `<p class="size-stock-summary">${(product.sizes || Object.keys(sizeStock)).map(size => { const qty = Math.max(0,Math.floor(Number(sizeStock[size] ?? 0))); const unit = isSareeProduct(product) ? (qty === 1 ? ' saree available' : ' sarees available') : (qty === 1 ? ' item available' : ' items available'); return `<span class="${qty > 0 ? 'size-in-stock' : 'size-out-stock'}">${escapeHTML(size)}: ${qty > 0 ? qty + unit : 'Out of stock'}</span>`; }).join('')}</p>` : '';
   return `<article class="product-card">
     <a class="product-image-wrap" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHTML(product.name)}">
       <img src="${escapeHTML(product.image)}" alt="Sample placeholder image for ${escapeHTML(product.name)} from Jija Studio" loading="lazy">
@@ -241,12 +241,23 @@ function renderProducts(container, list) {
 }
 function trackedStock(product) {
   const map = product && product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : {};
-  return Object.keys(map).length ? map : null;
+  if (Object.keys(map).length) return map;
+  // Categories with a single total quantity (notably sarees) still have enforceable inventory.
+  if (product && Number.isFinite(Number(product.stock))) return { 'One Size': Math.max(0, Math.floor(Number(product.stock))) };
+  return null;
 }
 function availableForCart(product, size) {
   const map = trackedStock(product);
-  if (!map) return Infinity; // Legacy products without per-size inventory remain compatible.
-  return Math.max(0, Math.floor(Number(map[size] ?? 0)));
+  if (!map) return Infinity;
+  const key = Object.prototype.hasOwnProperty.call(map, size) ? size : (Object.keys(map).length === 1 ? Object.keys(map)[0] : size);
+  return Math.max(0, Math.floor(Number(map[key] ?? 0)));
+}
+function isSareeProduct(product) {
+  return /saree|sari/i.test(String(product?.category || ''));
+}
+function contactForExtraSarees(product, requested, available) {
+  const message = 'Hello Jija Studio! I am interested in ' + product.name + '. Your website shows ' + available + ' saree(s) available, but I need ' + requested + '. Could your team please check whether more are available?';
+  window.open(whatsappLink(message), '_blank', 'noopener,noreferrer');
 }
 function cartQuantityForSize(cart, productId, size) {
   return cart.filter(item => String(item.id) === String(productId) && String(item.size || 'One Size') === String(size || 'One Size'))
@@ -286,7 +297,12 @@ function addToCart(id, quantity = 1, size = '', colour = '') {
     const available = availableForCart(product, size);
     const current = cartQuantityForSize(cart, product.id, size);
     if (available <= 0 || current + quantity > available) {
-      showToast(available <= 0 ? size + ' is out of stock' : 'Only ' + available + ' dress' + (available === 1 ? '' : 'es') + ' available in size ' + size);
+      if (isSareeProduct(product) && current + quantity > available) {
+        showToast(available <= 0 ? 'Saree stock is currently unavailable. Contact our team on WhatsApp to ask about availability.' : 'Only ' + available + ' saree(s) are currently available. Contact our team on WhatsApp to ask for more.');
+        if (confirm('Only ' + available + ' saree(s) are currently available. Would you like to contact our team on WhatsApp to ask about more?')) contactForExtraSarees(product,current + quantity,available);
+      } else {
+        showToast(available <= 0 ? size + ' is out of stock' : 'Only ' + available + ' item(s) available in size ' + size);
+      }
       return;
     }
   }
@@ -367,7 +383,7 @@ function setupProduct() {
     (product.video ? '<video class="detail-product-video" controls playsinline preload="metadata" src="' + escapeHTML(product.video) + '"></video>' : '') + imageNote + '</div>';
   root.innerHTML = galleryHTML + `<div class="detail-copy"><p class="eyebrow">${escapeHTML(product.category)}</p><h1>${escapeHTML(product.name)}</h1><p class="rating">★ ${product.rating.toFixed(1)} <span>(${product.reviewCount} sample reviews)</span></p>
   <div class="detail-price">${money(product.salePrice || product.price)} ${product.salePrice > 0 && product.salePrice < product.price ? `<del>${money(product.price)}</del><span class="save-tag">${Math.round((product.price-product.salePrice)/product.price*100)}% OFF · Save ${money(product.price-product.salePrice)}</span>` : ''}</div>
-  <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note" id="detail-stock-note">${trackedStock(product) ? 'Choose a size to see availability.' : (product.stock > 0 ? 'In stock' : 'Availability confirmed by the store')}</p>
+  <p class="detail-description">${escapeHTML(product.description)}</p><p class="stock-note" id="detail-stock-note">${trackedStock(product) ? (product.sizes.length > 1 ? 'Choose a size to see availability.' : (availableForCart(product,product.sizes[0] || 'One Size') > 0 ? availableForCart(product,product.sizes[0] || 'One Size') + (isSareeProduct(product) ? ' sarees available' : ' items available') : 'Out of stock')) : (product.stock > 0 ? 'In stock' : 'Out of stock')}</p>
   ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>{const tracked=!!trackedStock(product);const qty=tracked?availableForCart(product,s):null;return `<option value="${escapeHTML(s)}" ${tracked&&qty<=0?'disabled':''}>${escapeHTML(s)}</option>`;}).join('')}</select>` : ''}
   <label class="field-label" for="product-colour">Colour</label><select id="product-colour" class="form-control">${product.colours.map(c=>`<option>${escapeHTML(c)}</option>`).join('')}</select>
   <div class="detail-actions"><button class="button button-primary" id="detail-add">Add to bag</button><a class="button button-outline" target="_blank" rel="noopener" href="${whatsappLink(`Hello Jija Studio, I am interested in ${product.name} (Product ID: ${product.id}). Please share details.`)}">Ask on WhatsApp</a></div>
