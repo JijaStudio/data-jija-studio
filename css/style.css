@@ -160,3 +160,20 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
 .shipping-offer strong{font-size:clamp(15px,2.2vw,19px);color:var(--green-dark)}
 .shipping-offer small{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.4}
 @media(max-width:480px){.shipping-offer{justify-content:flex-start;padding:13px;gap:10px}.shipping-offer-icon{font-size:23px}}
+
+/* Wishlist and customer review sections */
+.wishlist-header-link{display:inline-flex;align-items:center;gap:5px;font-size:14px;text-decoration:none}
+.product-wishlist{position:absolute;top:10px;left:10px;z-index:4;width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.95);color:#a52f45;font-size:23px;line-height:1;cursor:pointer;box-shadow:0 2px 10px #0001}
+.product-wishlist[aria-pressed="true"]{background:#a52f45;color:#fff}
+.review-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.review-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
+.review-stars{color:#bd8a22;letter-spacing:2px;font-size:18px}
+.review-card h3{font-size:17px;margin:8px 0}
+.review-card p{margin:0;line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.review-form{margin-top:28px;padding:22px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.review-form h3{margin-top:0}
+.review-form-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}
+.review-form-fields label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13px}
+.review-form-fields input,.review-form-fields select,.review-form-fields textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fffefa;font:inherit}
+.review-full{grid-column:1/-1}
+@media(max-width:700px){.review-grid{grid-template-columns:1fr}.review-form-fields{grid-template-columns:1fr}.review-full{grid-column:auto}.wishlist-header-link span{display:none}}
