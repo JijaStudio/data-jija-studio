@@ -98,7 +98,7 @@ async function connectAdmin(user) {
     } else {
       const remoteProductsJson = JSON.stringify(remoteProducts);
       if (localStorage.getItem(PRODUCT_KEY) !== remoteProductsJson) shouldReloadForRemoteData = true;
-      localStorage.setItem(PRODUCT_KEY, remoteProductsJson);
+      try { localStorage.setItem(PRODUCT_KEY, remoteProductsJson); } catch (error) { console.warn('Firebase products loaded, but the browser cache is full. Continuing with Firebase as the source of truth.', error); }
       // Keep the remote catalogue intact; normalize its local representation without deleting products.
     }
     if (remoteSettings === null) {
@@ -106,7 +106,7 @@ async function connectAdmin(user) {
     } else {
       const remoteSettingsJson = JSON.stringify(remoteSettings);
       if (localStorage.getItem(SETTINGS_KEY) !== remoteSettingsJson) shouldReloadForRemoteData = true;
-      localStorage.setItem(SETTINGS_KEY, remoteSettingsJson);
+      try { localStorage.setItem(SETTINGS_KEY, remoteSettingsJson); } catch (error) { console.warn('Firebase settings loaded, but the browser cache is full. Continuing with Firebase as the source of truth.', error); }
     }
 
     readyToSync = true;
