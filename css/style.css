@@ -181,3 +181,11 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
 
 /* Per-size stock visibility on product cards */
 .size-stock-summary{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0;font-size:10px;line-height:1.35}.size-stock-summary span{display:inline-block;padding:4px 6px;border-radius:4px;background:#edf3ed;color:#174d38}.size-stock-summary .size-out-stock{background:#f8eaea;color:#9d2929}.form-control option:disabled{color:#999}
+
+
+/* Mobile wishlist visibility fix: the old mobile rule hid every wishlist span, including the heart and count. */
+.wishlist-header-link{gap:5px;white-space:nowrap;color:var(--green);flex:0 0 auto}
+.wishlist-header-link .wishlist-icon{display:inline!important;font-size:25px;line-height:1}
+.wishlist-header-link .wishlist-label{display:inline!important;font-size:11px;font-weight:600}
+.wishlist-header-link [data-wishlist-count]{display:grid!important;position:absolute;top:0;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;font-size:10px;line-height:1}
+@media(max-width:360px){.header-inner{gap:6px}.header-actions{gap:4px}.brand-logo{width:58px;height:58px}.wishlist-header-link{min-width:44px;padding-inline:2px}.wishlist-header-link .wishlist-label{font-size:10px}.header-actions>.icon-link{min-width:38px}}
