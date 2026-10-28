@@ -253,14 +253,21 @@ function cartQuantityForSize(cart, productId, size) {
     .reduce((sum,item) => sum + Math.max(0, Math.floor(Number(item.quantity) || 0)), 0);
 }
 function validateCartStock(cart, notify = false) {
+  const requested = new Map();
   for (const item of cart) {
     const product = findProduct(item.id);
-    if (!product) continue;
-    const map = trackedStock(product);
-    if (!map) continue;
-    const available = availableForCart(product, item.size);
-    if (available <= 0 || Number(item.quantity) > available) {
-      if (notify) showToast(available <= 0 ? (item.size || 'This size') + ' is out of stock. Remove it from your bag.' : 'Only ' + available + ' of size ' + item.size + ' available. Please reduce the quantity.');
+    if (!product || !trackedStock(product)) continue;
+    const size = String(item.size || 'One Size');
+    const key = String(product.id) + '|' + size;
+    requested.set(key, (requested.get(key) || 0) + Math.max(0, Math.floor(Number(item.quantity) || 0)));
+  }
+  for (const [key, quantity] of requested) {
+    const splitAt = key.indexOf('|');
+    const product = findProduct(key.slice(0, splitAt));
+    const size = key.slice(splitAt + 1);
+    const available = availableForCart(product, size);
+    if (available <= 0 || quantity > available) {
+      if (notify) showToast(available <= 0 ? size + ' is out of stock. Remove it from your bag.' : 'Only ' + available + ' dress' + (available === 1 ? '' : 'es') + ' available in size ' + size + '. Please reduce your quantity.');
       return false;
     }
   }
