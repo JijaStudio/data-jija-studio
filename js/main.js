@@ -27,9 +27,10 @@ function whatsappLink(message = 'Hello Jija Studio! I have a question about your
 function isDemoProduct(p) { return !p || p.placeholder === true || String(p.id) === '121' || /demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || '')); }
 
 function applyAdminCatalogueAndPaymentSettings() {
-  let savedProducts = null, settings = {};
-  try { savedProducts = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null'); } catch {}
-  try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
+  let savedProducts = Array.isArray(window.jijaFirebaseProducts) ? window.jijaFirebaseProducts : null;
+  let settings = window.jijaFirebaseSettings && typeof window.jijaFirebaseSettings === 'object' ? window.jijaFirebaseSettings : null;
+  if (!Array.isArray(savedProducts)) { try { savedProducts = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null'); } catch {} }
+  if (!settings) { try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch { settings = {}; } }
   if (settings.upiId && /^[^\\s@]+@[^\\s@]+$/.test(settings.upiId)) STORE_CONFIG.upiId = settings.upiId;
   if (settings.upiName) STORE_CONFIG.upiName = settings.upiName;
   if (Array.isArray(savedProducts)) {
@@ -106,8 +107,8 @@ function setupHomepageAnimations() {
 }
 
 function applyAdminHomepageSettings() {
-  let settings = {};
-  try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
+  let settings = window.jijaFirebaseSettings && typeof window.jijaFirebaseSettings === 'object' ? window.jijaFirebaseSettings : {};
+  if (!Object.keys(settings).length) { try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch { settings = {}; } }
   applyAdminVisualPreferences(settings);
   document.querySelectorAll('.brand-logo').forEach(img => { img.src = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3K9B8QWO8ldsXECgkrcRH2T3svS/c8225bf7-f76c-467c-a11c-284b88b92c7b.png'; img.alt = 'Jija Studio logo'; });
   const threshold = Math.max(0, Number(settings.freeShippingThreshold ?? 3500) || 0);
@@ -176,7 +177,7 @@ function applyAdminHomepageSettings() {
 }
 
 window.addEventListener('jija:firebase-data-loaded', () => {
-  try { applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupHome(); setupShop(); }
+  try { applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupHome(); setupShop(); setupProduct(); setupCart(); }
   catch (error) { console.error('Could not refresh Jija Studio from Firebase data.', error); }
 });
 
