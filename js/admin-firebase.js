@@ -82,6 +82,7 @@ function enableAutoSync() {
 
 async function connectAdmin(user) {
   let shouldReloadForRemoteData = false;
+  let cacheWriteFailed = false;
   status('Signed in. Loading products and settings from Firebase…');
   try {
     const [productsSnapshot, settingsSnapshot] = await Promise.all([
@@ -103,7 +104,7 @@ async function connectAdmin(user) {
       } catch (error) {
         // Do not reload on cache quota errors: that would repeat this connection
         // forever. Firebase can still connect even when this browser cache is full.
-        shouldReloadForRemoteData = false;
+        cacheWriteFailed = true;
         console.warn('Firebase products loaded, but the browser cache is full. Continuing with Firebase as the source of truth.', error);
       }
       // Keep the remote catalogue intact; normalize its local representation without deleting products.
@@ -117,7 +118,7 @@ async function connectAdmin(user) {
         localStorage.setItem(SETTINGS_KEY, remoteSettingsJson);
       } catch (error) {
         // Avoid a reload loop when the settings cache cannot be written.
-        shouldReloadForRemoteData = false;
+        cacheWriteFailed = true;
         console.warn('Firebase settings loaded, but the browser cache is full. Continuing with Firebase as the source of truth.', error);
       }
     }
@@ -128,7 +129,7 @@ async function connectAdmin(user) {
     // The existing admin UI reads localStorage during startup. Reload once after
     // Firebase data is loaded so its product list and settings reflect the database.
     // The admin form initializes before Firebase loads. Reload if remote data changed local cache.
-    if (shouldReloadForRemoteData) {
+    if (shouldReloadForRemoteData && !cacheWriteFailed) {
       location.reload();
       return;
     }
