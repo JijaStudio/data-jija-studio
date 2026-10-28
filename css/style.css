@@ -111,3 +111,15 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
 .instagram-link strong{display:block;color:var(--gold);font-weight:700}
 .instagram-link:hover,.instagram-link:focus-visible{color:var(--gold);transform:translateY(-1px)}
 .instagram-link:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:4px}
+
+/* Homepage collection cards: keep every tile uniform without cropping product photography. */
+.category-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:14px}
+.category-card{box-sizing:border-box;min-width:0;min-height:0;aspect-ratio:4/5;padding:0;display:flex;align-items:stretch;isolation:isolate;background:#f8f4ed;border-radius:8px;overflow:hidden}
+.category-card:before{z-index:1;inset:auto 0 0;height:38%;background:linear-gradient(180deg,transparent,rgba(16,56,39,.82));pointer-events:none}
+.category-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;padding:8px;box-sizing:border-box;background:#f8f4ed;transition:transform .3s ease}
+.category-card:hover img{transform:scale(1.015)}
+.category-card>div{z-index:2;align-self:flex-end;width:100%;box-sizing:border-box;padding:12px 12px 13px;color:#fff}
+.category-card h3{font-size:clamp(16px,2.5vw,22px);line-height:1.15;overflow-wrap:anywhere}
+.category-card p{font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+@media(min-width:700px){.category-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.category-card{aspect-ratio:4/5}}
+@media(max-width:360px){.category-grid{gap:9px}.category-card{aspect-ratio:3/4}.category-card img{padding:5px}.category-card>div{padding:9px}.category-card h3{font-size:16px}}
