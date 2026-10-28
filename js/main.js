@@ -45,11 +45,38 @@ const JIJA_PALETTES = {
   royal: {'--green':'#234b83','--green-dark':'#17365f','--green-soft':'#e4edf8','--beige':'#f1f5fb','--beige-deep':'#dce6f4','--gold':'#c5a45d','--ink':'#202a39','--muted':'#687587','--white':'#ffffff','--line':'#dfe6ef'},
   plum: {'--green':'#633d69','--green-dark':'#432749','--green-soft':'#eee5f0','--beige':'#f7f0f6','--beige-deep':'#e7d9e9','--gold':'#c9ad83','--ink':'#2b2430','--muted':'#776d7b','--white':'#fffaff','--line':'#e8deea'},
   terracotta: {'--green':'#9a4e36','--green-dark':'#713724','--green-soft':'#f5e7df','--beige':'#fbf0e6','--beige-deep':'#efd8c5','--gold':'#c89b56','--ink':'#30251f','--muted':'#806f64','--white':'#fffaf5','--line':'#eaded3'},
+  diwali: {'--green':'#9d210e','--green-dark':'#651608','--green-soft':'#ffead0','--beige':'#fff4df','--beige-deep':'#f7d8a2','--gold':'#f0b429','--ink':'#422116','--muted':'#87644f','--white':'#fffaf0','--line':'#f0d9b6'},
+  christmas: {'--green':'#14532d','--green-dark':'#082f1a','--green-soft':'#e0f0e4','--beige':'#f5f4eb','--beige-deep':'#e0e8dd','--gold':'#d7b56d','--ink':'#1d3025','--muted':'#6b7b70','--white':'#fffefa','--line':'#dce4dc'},
+  gudipadwa: {'--green':'#176b45','--green-dark':'#10482e','--green-soft':'#e1f0df','--beige':'#fff7e7','--beige-deep':'#f8dfb4','--gold':'#d5a62b','--ink':'#273527','--muted':'#6d7661','--white':'#fffdf6','--line':'#eadfc9'},
+  holi: {'--green':'#8b3fb0','--green-dark':'#64258a','--green-soft':'#f4e4ff','--beige':'#fff4fa','--beige-deep':'#fce7b2','--gold':'#f2b705','--ink':'#33203c','--muted':'#806b87','--white':'#fffaff','--line':'#ebd9f0'},
+  ganesh: {'--green':'#b93822','--green-dark':'#812417','--green-soft':'#ffeadb','--beige':'#fff5e7','--beige-deep':'#f7d9b0','--gold':'#e9a11b','--ink':'#3e2a22','--muted':'#846b5b','--white':'#fffaf2','--line':'#eedac5'},
+  navratri: {'--green':'#b91c35','--green-dark':'#74152a','--green-soft':'#fbe3e7','--beige':'#fff2ed','--beige-deep':'#eed9f5','--gold':'#e8bd48','--ink':'#3b2028','--muted':'#80656d','--white':'#fffaf8','--line':'#efd9df'},
+  eid: {'--green':'#075e54','--green-dark':'#06443d','--green-soft':'#dff3ed','--beige':'#f5f7ec','--beige-deep':'#e3ead5','--gold':'#d8bd70','--ink':'#1d302d','--muted':'#667a73','--white':'#fffef7','--line':'#dfe6d8'},
+  rakhi: {'--green':'#c04470','--green-dark':'#8e2c51','--green-soft':'#fbe6ee','--beige':'#fff2f6','--beige-deep':'#e9defc','--gold':'#d8ad55','--ink':'#3a2730','--muted':'#806b75','--white':'#fffafd','--line':'#eedce5'},
+  sankranti: {'--green':'#168aad','--green-dark':'#11617a','--green-soft':'#e0f4fc','--beige':'#f0faff','--beige-deep':'#d6edfa','--gold':'#f5c542','--ink':'#203440','--muted':'#667d8a','--white':'#fffefe','--line':'#d7e9f1'},
+  independence: {'--green':'#21834a','--green-dark':'#14552f','--green-soft':'#e0f2e6','--beige':'#fff9ed','--beige-deep':'#f8e0c3','--gold':'#f28c28','--ink':'#28342d','--muted':'#6e786f','--white':'#fffefa','--line':'#e6e1d4'},
+  onam: {'--green':'#176b45','--green-dark':'#10482e','--green-soft':'#e2f0df','--beige':'#fffaf0','--beige-deep':'#eee4c8','--gold':'#d8b75a','--ink':'#2d3529','--muted':'#77796b','--white':'#fffefa','--line':'#e9e2d2'},
+  pongal: {'--green':'#27734d','--green-dark':'#194c34','--green-soft':'#e5f0df','--beige':'#fff4d7','--beige-deep':'#f3d9b4','--gold':'#eab308','--ink':'#382a20','--muted':'#7d6a55','--white':'#fffaf0','--line':'#eadcc5'},
+  wedding: {'--green':'#6d365e','--green-dark':'#482340','--green-soft':'#f4e4ee','--beige':'#fff6ee','--beige-deep':'#f1dce1','--gold':'#d7bd83','--ink':'#34252e','--muted':'#7f6a75','--white':'#fffaf7','--line':'#eadce1'},
+  newyear: {'--green':'#24345f','--green-dark':'#111b3c','--green-soft':'#e5e9f3','--beige':'#f5f5f8','--beige-deep':'#dfe2eb','--gold':'#d8bd70','--ink':'#252a3a','--muted':'#747a8c','--white':'#fffefa','--line':'#e0e2e9'},
   monochrome: {'--green':'#282828','--green-dark':'#111111','--green-soft':'#eeeeeb','--beige':'#f4f1ea','--beige-deep':'#e5e0d6','--gold':'#a18a5a','--ink':'#242424','--muted':'#737373','--white':'#fffefa','--line':'#e2ded5'}
 };
+const FESTIVAL_PALETTE_KEYS={diwali:'diwali',christmas:'christmas',gudipadwa:'gudipadwa',holi:'holi',ganesh:'ganesh',navratri:'navratri',eid:'eid',rakhi:'rakhi',sankranti:'sankranti',independence:'independence',onam:'onam',pongal:'pongal',wedding:'wedding',newyear:'newyear'};
+const FESTIVAL_DECORATIONS={diwali:'🪔 ✨ 🪷 ✨ 🪔',christmas:'🎄 ❄️ 🎅🏻 🎁 ⭐',gudipadwa:'🚩 🌿 🪔 🌼 🚩',holi:'🎨 🌈 💗 🌼 🎨',ganesh:'🐘 🪷 🪔 🌼 🐘',navratri:'💃 ✨ 🪔 🌺 💃',eid:'🌙 ✨ ⭐ 🕌 🌙',rakhi:'🎁 🌸 💝 ✨ 🎁',sankranti:'🪁 ☀️ 🪁 🌤️ 🪁',independence:'🇮🇳 ✨ 🇮🇳 ✨ 🇮🇳',onam:'🌼 🌿 🌼 🌿 🌼',pongal:'🌾 ☀️ 🪴 🌾 ☀️',wedding:'💍 ✨ 🌸 ✨ 💍',newyear:'✨ ⭐ 🎆 ⭐ ✨'};
 function applyAdminVisualPreferences(settings) {
-  const palette = JIJA_PALETTES[settings.colorPalette] || JIJA_PALETTES.emerald;
+  const festival=settings.festivalTheme||'none';
+  const paletteKey=FESTIVAL_PALETTE_KEYS[festival]||settings.colorPalette||'emerald';
+  const palette = JIJA_PALETTES[paletteKey] || JIJA_PALETTES.emerald;
   Object.entries(palette).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
+  document.documentElement.dataset.festivalTheme=FESTIVAL_DECORATIONS[festival]?'active':'none';
+  const hero=document.querySelector('.hero');
+  if(hero){
+    let decor=hero.querySelector('.festival-decor');
+    if(FESTIVAL_DECORATIONS[festival]){
+      if(!decor){decor=document.createElement('div');decor.className='festival-decor';decor.setAttribute('aria-label','Festive decoration');hero.prepend(decor);}
+      decor.textContent=FESTIVAL_DECORATIONS[festival];decor.hidden=false;
+    }else if(decor){decor.hidden=true;}
+  }
   document.documentElement.dataset.homeAnimation = ['none','fade','slide','zoom','rise','flip','blur','bounce','rotate','glow','color-pulse','gradient-flow','shimmer'].includes(settings.animationStyle) ? settings.animationStyle : 'fade';
 }
 let homepageAnimationObserver = null;
