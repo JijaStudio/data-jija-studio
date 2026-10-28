@@ -83,17 +83,17 @@ async function connectAdmin(user) {
       get(ref(database, 'settings'))
     ]);
     const rawRemoteProducts = productsSnapshot.exists() ? productsSnapshot.val() : null;
-    const remoteProducts = Array.isArray(rawRemoteProducts) ? rawRemoteProducts.filter(p => p && p.placeholder !== true && String(p.id) !== '121' && !/demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || ''))) : rawRemoteProducts;
+    const remoteProducts = rawRemoteProducts === null ? null : (Array.isArray(rawRemoteProducts) ? rawRemoteProducts : Object.values(rawRemoteProducts || {})).filter(p => p && typeof p === 'object');
     const remoteSettings = settingsSnapshot.exists() ? settingsSnapshot.val() : null;
 
     // First connection: seed Firebase with this browser's current catalogue/settings.
     if (remoteProducts === null) {
-      await set(ref(database, 'products'), (localJson(PRODUCT_KEY, []) || []).filter(p => p && p.placeholder !== true && String(p.id) !== '121' && !/demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || ''))));
+      await set(ref(database, 'products'), (Array.isArray(localJson(PRODUCT_KEY, [])) ? localJson(PRODUCT_KEY, []) : Object.values(localJson(PRODUCT_KEY, {}) || {})).filter(p => p && typeof p === 'object'));
     } else {
       const remoteProductsJson = JSON.stringify(remoteProducts);
       if (localStorage.getItem(PRODUCT_KEY) !== remoteProductsJson) shouldReloadForRemoteData = true;
       localStorage.setItem(PRODUCT_KEY, remoteProductsJson);
-      if (Array.isArray(rawRemoteProducts) && JSON.stringify(rawRemoteProducts) !== JSON.stringify(remoteProducts)) await set(ref(database, 'products'), remoteProducts);
+      // Keep the remote catalogue intact; normalize its local representation without deleting products.
     }
     if (remoteSettings === null) {
       await set(ref(database, 'settings'), localJson(SETTINGS_KEY, {}));
