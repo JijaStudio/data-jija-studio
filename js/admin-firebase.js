@@ -55,6 +55,13 @@ window.jijaSaveFirebaseSettings = async function(value) {
   return true;
 };
 
+window.jijaSaveFirebaseProducts = async function(value) {
+  if (!auth.currentUser || !readyToSync) throw new Error('Firebase is not connected. Please wait for the connected status and try again.');
+  await set(ref(database, 'products'), value);
+  status('Connected to Firebase · products synced');
+  return true;
+};
+
 function enableAutoSync() {
   const originalSetItem = Storage.prototype.setItem;
   if (Storage.prototype.__jijaFirebasePatched) return;
