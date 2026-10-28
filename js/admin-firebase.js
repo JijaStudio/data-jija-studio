@@ -129,10 +129,14 @@ async function connectAdmin(user) {
     // The existing admin UI reads localStorage during startup. Reload once after
     // Firebase data is loaded so its product list and settings reflect the database.
     // The admin form initializes before Firebase loads. Reload if remote data changed local cache.
-    if (shouldReloadForRemoteData && !cacheWriteFailed) {
+    const reloadKey = 'jijaAdminHydrationReloaded';
+    const alreadyReloaded = sessionStorage.getItem(reloadKey) === '1';
+    if (shouldReloadForRemoteData && !cacheWriteFailed && !alreadyReloaded) {
+      sessionStorage.setItem(reloadKey, '1');
       location.reload();
       return;
     }
+    sessionStorage.removeItem(reloadKey);
     document.body.classList.add('firebase-ready');
     status('Connected to Firebase · products and settings are shared');
     let logout = document.getElementById('firebase-logout');
