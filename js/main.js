@@ -246,7 +246,7 @@ function setupShop() {
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
   const params = new URLSearchParams(location.search);
-  const allCategories = [...new Set([...products.map(p => p.category).filter(Boolean), ...(settings.categories || []), ...Object.keys(settings.subcategories || {})])].sort();
+  const allCategories = [...new Set([...products.map(p => p.category).filter(Boolean), ...(settings.categories || []), ...Object.keys(settings.subcategories || {}), ...(Array.isArray(settings.collectionCards) ? settings.collectionCards.map(card => card && card.category).filter(Boolean) : [])])].sort();
   if (category) {
     const requested = params.get('category') || 'all';
     category.innerHTML = '<option value="all">All categories</option>' + allCategories.map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
