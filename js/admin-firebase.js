@@ -170,6 +170,11 @@ async function connectAdmin(user) {
     }
     sessionStorage.removeItem(reloadKey);
     document.body.classList.add('firebase-ready');
+    // Notify the inline admin UI to refresh its product list from the hydrated cache.
+    // This avoids a stale admin list if a previous session interrupted the reload.
+    window.dispatchEvent(new CustomEvent('jija:admin-firebase-ready', {
+      detail: { productsCount: Array.isArray(remoteProducts) ? remoteProducts.length : 0 }
+    }));
     const visibleRemoteCount = Array.isArray(remoteProducts) ? remoteProducts.length : 0;
     if (visibleRemoteCount === 0 && !localHasRecoverableProducts) {
       status('Firebase connected, but 0 products were found. No empty catalogue was written. Restore a Firebase backup or recover an exported product backup before adding products.', true);
