@@ -258,6 +258,17 @@ $('save-coupon').addEventListener('click',()=>{const data=safeRead(SETTINGS_KEY,
 $('export-data').addEventListener('click',()=>{const data={products:catalogue,settings:safeRead(SETTINGS_KEY,{}),version:1,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='jija-studio-admin-backup.json';a.click();URL.revokeObjectURL(a.href);showStatus('backup-status','Backup downloaded. Keep it safe.');});
 $('import-data').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data.products)||!data.settings)throw Error('Invalid backup');localStorage.setItem(PRODUCT_KEY,JSON.stringify(data.products));localStorage.setItem(SETTINGS_KEY,JSON.stringify(data.settings));catalogue=data.products;renderSelect();renderList();showStatus('backup-status','Backup imported into this browser.');}catch{showStatus('backup-status','That file is not a valid Jija Studio backup.');}};reader.readAsText(file);});
 readProducts();renderSelect();renderList();if(catalogue.length)loadProduct(catalogue[0].id);
+// Re-hydrate the admin catalogue after Firebase finishes loading, even if a prior
+// interrupted reload left the one-time reload guard in sessionStorage.
+window.addEventListener('jija:admin-firebase-ready',()=>{
+  const previouslySelected=selectedId;
+  readProducts();
+  renderSelect();
+  renderList();
+  if(previouslySelected && catalogue.some(p=>String(p.id)===String(previouslySelected))) loadProduct(previouslySelected);
+  else if(catalogue.length) loadProduct(catalogue[0].id);
+  else clearProduct();
+});
 })();
 </script>
 <script type="module" src="js/admin-firebase.js"></script>
