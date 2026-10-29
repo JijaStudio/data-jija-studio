@@ -93,9 +93,21 @@ async function connectAdmin(user) {
     const remoteProducts = rawRemoteProducts === null ? null : (Array.isArray(rawRemoteProducts) ? rawRemoteProducts : Object.values(rawRemoteProducts || {})).filter(p => p && typeof p === 'object');
     const remoteSettings = settingsSnapshot.exists() ? settingsSnapshot.val() : null;
 
-    // First connection: seed Firebase with this browser's current catalogue/settings.
-    if (remoteProducts === null) {
-      await set(ref(database, 'products'), (Array.isArray(localJson(PRODUCT_KEY, [])) ? localJson(PRODUCT_KEY, []) : Object.values(localJson(PRODUCT_KEY, {}) || {})).filter(p => p && typeof p === 'object'));
+    // Protect against an accidental empty catalogue write: if Firebase contains
+    // no products but this admin browser still has a saved catalogue, recover it.
+    // Never replace a non-empty remote catalogue with a local cache.
+    const localRawProducts = localJson(PRODUCT_KEY, []);
+    const localProducts = (Array.isArray(localRawProducts) ? localRawProducts : Object.values(localRawProducts || {}))
+      .filter(p => p && typeof p === 'object');
+    if (remoteProducts === null || (remoteProducts.length === 0 && localProducts.some(p => !p._deleted))) {
+      const recoveryProducts = remoteProducts === null
+        ? localProducts
+        : localProducts;
+      if (remoteProducts !== null && remoteProducts.length === 0 && recoveryProducts.some(p => !p._deleted)) {
+        status('Firebase catalogue is empty. Restoring saved products from this browser…');
+      }
+      await set(ref(database, 'products'), recoveryProducts);
+      // Hydrate the local cache from the recovered/seeded catalogue below.
     } else {
       const remoteProductsJson = JSON.stringify(remoteProducts);
       try {
