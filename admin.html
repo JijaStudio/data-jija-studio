@@ -183,7 +183,23 @@ $('p-category').addEventListener('change',()=>{renderSubcategories();updateInven
 $('p-size-stock').addEventListener('input',updateStockTotal);
 function updateDiscountPreview(){const price=Number($('p-price').value)||0,sale=Number($('p-sale').value)||0;const discount=price>0&&sale>=0&&sale<price?Math.round((price-sale)/price*100):0;const node=$('p-discount-preview');if(node)node.textContent=discount>0?discount+'% OFF · You save ₹'+(price-sale).toLocaleString('en-IN'):'Discount: 0%';}
 $('p-price').addEventListener('input',updateDiscountPreview);$('p-sale').addEventListener('input',updateDiscountPreview);
-$('p-sizes').addEventListener('change',()=>{const sizes=split($('p-sizes').value);if(!$('p-size-stock').value.trim()&&sizes.length)$('p-size-stock').value=sizes.map(s=>s+': 0').join(', ');updateInventoryFields();});
+function syncSizeStockEntries(){
+  const sizes=split($('p-sizes').value);
+  const current=parseSizeStock($('p-size-stock').value);
+  // Keep quantities already entered, add a zero-quantity row for every newly
+  // entered size/age range, and remove rows that are no longer in the sizes list.
+  $('p-size-stock').value=sizes.map(size=>size+': '+Math.max(0,Math.floor(Number(current[size]??0)))).join(', ');
+  updateStockTotal();
+}
+$('p-sizes').addEventListener('input',()=>{
+  updateInventoryFields();
+  if($('p-size-stock-field').hidden)return;
+  syncSizeStockEntries();
+});
+$('p-sizes').addEventListener('change',()=>{
+  updateInventoryFields();
+  if(!$('p-size-stock-field').hidden)syncSizeStockEntries();
+});
 $('add-category').addEventListener('click',()=>{const name=$('new-category-name').value.trim();if(!name)return showStatus('product-status','Type a category name first.');settings.categories=[...new Set([...(settings.categories||[]),name])];saveSettings();renderCategories(name);$('new-category-name').value='';showStatus('product-status','Category created: '+name);});
 $('add-subcategory').addEventListener('click',()=>{const parent=$('p-category').value,name=$('new-subcategory-name').value.trim();if(!parent)return showStatus('product-status','Select a parent category first.');if(!name)return showStatus('product-status','Type a subcategory name first.');settings.subcategories=settings.subcategories||{};settings.subcategories[parent]=[...new Set([...(settings.subcategories[parent]||[]),name])];saveSettings();renderSubcategories(name);$('new-subcategory-name').value='';showStatus('product-status','Subcategory created under '+parent+': '+name);});
 $('new-product').addEventListener('click',clearProduct);
