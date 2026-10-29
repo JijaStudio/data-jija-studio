@@ -173,7 +173,10 @@ async function connectAdmin(user) {
     // Notify the inline admin UI to refresh its product list from the hydrated cache.
     // This avoids a stale admin list if a previous session interrupted the reload.
     window.dispatchEvent(new CustomEvent('jija:admin-firebase-ready', {
-      detail: { productsCount: Array.isArray(remoteProducts) ? remoteProducts.length : 0 }
+      detail: {
+        products: Array.isArray(remoteProducts) ? remoteProducts : localProducts,
+        productsCount: Array.isArray(remoteProducts) ? remoteProducts.length : localProducts.length
+      }
     }));
     const visibleRemoteCount = Array.isArray(remoteProducts) ? remoteProducts.length : 0;
     if (visibleRemoteCount === 0 && !localHasRecoverableProducts) {
