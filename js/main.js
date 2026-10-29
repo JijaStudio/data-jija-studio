@@ -17,7 +17,8 @@ const findProduct = id => products.find(product => product.id === String(id));
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 function updateCartCount() {
-  const count = getCart().reduce((sum, item) => sum + item.quantity, 0);
+  // Do not show a cart badge for stale cart entries whose products are no longer available.
+  const count = getCart().filter(item => findProduct(item.id) && Number(item.quantity) > 0).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   document.querySelectorAll('[data-cart-count]').forEach(node => { node.textContent = count; node.setAttribute('aria-label', `${count} items in cart`); });
   const wishlistCount = readWishlist().length;
   document.querySelectorAll('[data-wishlist-count]').forEach(node => { node.textContent = wishlistCount; node.setAttribute('aria-label', `${wishlistCount} saved items in wishlist`); });
@@ -179,8 +180,17 @@ function applyAdminHomepageSettings() {
 }
 
 window.addEventListener('jija:firebase-data-loaded', () => {
-  try { applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupHome(); setupShop(); setupProduct(); setupCart(); }
-  catch (error) { console.error('Could not refresh Jija Studio from Firebase data.', error); }
+  try {
+    applyAdminCatalogueAndPaymentSettings();
+    applyAdminHomepageSettings();
+    setupHome();
+    setupShop();
+    setupProduct();
+    setupCart();
+    updateCartCount();
+  } catch (error) {
+    console.error('Could not refresh Jija Studio from Firebase data.', error);
+  }
 });
 
 function setupGlobalUI() {
