@@ -45,6 +45,11 @@ async function syncLocalToFirebase(key, rawValue) {
   let value;
   try { value = JSON.parse(rawValue); } catch { return; }
   const path = key === PRODUCT_KEY ? 'products' : 'settings';
+  // A blank local cache must never erase the shared catalogue automatically.
+  if (path === 'products' && Array.isArray(value) && value.length === 0) {
+    status('Safety stop: an empty product list was not synced to Firebase. Restore the catalogue before saving.', true);
+    return;
+  }
   try {
     await writeFirebase(path, value);
     status('Connected to Firebase · changes synced');
@@ -63,6 +68,9 @@ window.jijaSaveFirebaseSettings = async function(value) {
 
 window.jijaSaveFirebaseProducts = async function(value) {
   if (!auth.currentUser || !readyToSync) throw new Error('Firebase is not connected. Please wait for the connected status and try again.');
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error('Safety stop: refusing to replace the Firebase catalogue with an empty product list.');
+  }
   await writeFirebase('products', value);
   status('Connected to Firebase · products synced');
   return true;
@@ -99,27 +107,39 @@ async function connectAdmin(user) {
     const localRawProducts = localJson(PRODUCT_KEY, []);
     const localProducts = (Array.isArray(localRawProducts) ? localRawProducts : Object.values(localRawProducts || {}))
       .filter(p => p && typeof p === 'object');
-    if (remoteProducts === null || (remoteProducts.length === 0 && localProducts.some(p => !p._deleted))) {
-      const recoveryProducts = remoteProducts === null
-        ? localProducts
-        : localProducts;
-      if (remoteProducts !== null && remoteProducts.length === 0 && recoveryProducts.some(p => !p._deleted)) {
-        status('Firebase catalogue is empty. Restoring saved products from this browser…');
+    const localHasRecoverableProducts = localProducts.some(p => !p._deleted);
+    if (remoteProducts === null && localHasRecoverableProducts) {
+      // Seed Firebase only when a real saved local catalogue is available.
+      await set(ref(database, 'products'), localProducts);
+      try {
+        const recoveredJson = JSON.stringify(localProducts);
+        if (localStorage.getItem(PRODUCT_KEY) !== recoveredJson) shouldReloadForRemoteData = true;
+        localStorage.setItem(PRODUCT_KEY, recoveredJson);
+      } catch (error) {
+        cacheWriteFailed = true;
+        console.warn('Recovered products, but could not update the browser cache.', error);
       }
-      await set(ref(database, 'products'), recoveryProducts);
-      // Hydrate the local cache from the recovered/seeded catalogue below.
+    } else if (remoteProducts !== null && remoteProducts.length === 0 && localHasRecoverableProducts) {
+      // Recover an empty remote catalogue only from a non-empty local backup.
+      status('Firebase catalogue is empty. Restoring saved products from this browser…');
+      await set(ref(database, 'products'), localProducts);
+      try {
+        const recoveredJson = JSON.stringify(localProducts);
+        if (localStorage.getItem(PRODUCT_KEY) !== recoveredJson) shouldReloadForRemoteData = true;
+        localStorage.setItem(PRODUCT_KEY, recoveredJson);
+      } catch (error) {
+        cacheWriteFailed = true;
+        console.warn('Recovered products, but could not update the browser cache.', error);
+      }
     } else {
-      const remoteProductsJson = JSON.stringify(remoteProducts);
+      const remoteProductsJson = JSON.stringify(remoteProducts || []);
       try {
         if (localStorage.getItem(PRODUCT_KEY) !== remoteProductsJson) shouldReloadForRemoteData = true;
         localStorage.setItem(PRODUCT_KEY, remoteProductsJson);
       } catch (error) {
-        // Do not reload on cache quota errors: that would repeat this connection
-        // forever. Firebase can still connect even when this browser cache is full.
         cacheWriteFailed = true;
-        console.warn('Firebase products loaded, but the browser cache is full. Continuing with Firebase as the source of truth.', error);
+        console.warn('Firebase products loaded, but the browser cache could not be updated.', error);
       }
-      // Keep the remote catalogue intact; normalize its local representation without deleting products.
     }
     if (remoteSettings === null) {
       await set(ref(database, 'settings'), localJson(SETTINGS_KEY, {}));
@@ -150,7 +170,12 @@ async function connectAdmin(user) {
     }
     sessionStorage.removeItem(reloadKey);
     document.body.classList.add('firebase-ready');
-    status('Connected to Firebase · products and settings are shared');
+    const visibleRemoteCount = Array.isArray(remoteProducts) ? remoteProducts.length : 0;
+    if (visibleRemoteCount === 0 && !localHasRecoverableProducts) {
+      status('Firebase connected, but 0 products were found. No empty catalogue was written. Restore a Firebase backup or recover an exported product backup before adding products.', true);
+    } else {
+      status('Connected to Firebase · ' + visibleRemoteCount + ' products loaded and shared');
+    }
     let logout = document.getElementById('firebase-logout');
     if (!logout) {
       logout = document.createElement('button');
