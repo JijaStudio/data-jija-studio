@@ -260,9 +260,17 @@ $('import-data').addEventListener('change',e=>{const file=e.target.files[0];if(!
 readProducts();renderSelect();renderList();if(catalogue.length)loadProduct(catalogue[0].id);
 // Re-hydrate the admin catalogue after Firebase finishes loading, even if a prior
 // interrupted reload left the one-time reload guard in sessionStorage.
-window.addEventListener('jija:admin-firebase-ready',()=>{
+window.addEventListener('jija:admin-firebase-ready',(event)=>{
   const previouslySelected=selectedId;
-  readProducts();
+  // Prefer the exact catalogue returned by Firebase. This also works when the
+  // browser's localStorage is full or its cached catalogue could not be updated.
+  const firebaseProducts=event.detail && Array.isArray(event.detail.products) ? event.detail.products : null;
+  if(firebaseProducts){
+    deletedIds=firebaseProducts.filter(p=>p&&p._deleted).map(p=>String(p.id));
+    catalogue=firebaseProducts.filter(p=>p&&typeof p==='object'&&!p._deleted&&!isDemoProduct(p));
+  }else{
+    readProducts();
+  }
   renderSelect();
   renderList();
   if(previouslySelected && catalogue.some(p=>String(p.id)===String(previouslySelected))) loadProduct(previouslySelected);
