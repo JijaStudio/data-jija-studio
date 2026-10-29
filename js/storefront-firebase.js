@@ -9,11 +9,16 @@ function normalizeList(raw) {
 let gotProducts = false;
 let gotSettings = false;
 
+// Product data must not wait for the settings read: if settings are blocked or
+// temporarily unavailable, the catalogue should still load from Firebase.
 function notifyStorefront() {
-  // Wait until both Firebase reads have returned before rendering, so the
-  // catalogue and store settings are applied together on first load.
-  if (!gotProducts || !gotSettings) return;
-  window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded'));
+  if (!gotProducts) return;
+  if (!window.jijaFirebaseSettings || typeof window.jijaFirebaseSettings !== 'object') {
+    window.jijaFirebaseSettings = {};
+  }
+  window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded', {
+    detail: { productsLoaded: gotProducts, settingsLoaded: gotSettings }
+  }));
 }
 
 onValue(ref(database, 'products'), snapshot => {
