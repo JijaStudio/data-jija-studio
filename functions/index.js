@@ -91,7 +91,7 @@ async function computeOrder(body) {
   return { customer, items, subtotal, shipping, total: subtotal + shipping };
 }
 async function sendWhatsAppTemplate(to, templateName, order) {
-  if (!templateName || !WHATSAPP_TOKEN.value() || !WHATSAPP_PHONE_NUMBER_ID.value()) return;
+  if (!templateName || !WHATSAPP_TOKEN.value() || !WHATSAPP_PHONE_NUMBER_ID.value()) throw new Error("WhatsApp Cloud API or approved template is not configured.");
   const body = { messaging_product: "whatsapp", to, type: "template", template: {
     name: templateName, language: { code: "en" },
     components: [{ type: "body", parameters: [
@@ -118,7 +118,8 @@ async function notifyOrderOnce(orderId) {
   const order = snap.val();
   try {
     const storeNumber = WHATSAPP_STORE_NUMBER.value().replace(/\D/g, "");
-    if (storeNumber) await sendWhatsAppTemplate(storeNumber, WHATSAPP_ORDER_TEMPLATE.value(), order);
+    if (!storeNumber) throw new Error("Store WhatsApp number is not configured.");
+    await sendWhatsAppTemplate(storeNumber, WHATSAPP_ORDER_TEMPLATE.value(), order);
     await sendWhatsAppTemplate(order.customer.phone, WHATSAPP_CUSTOMER_TEMPLATE.value(), order);
     await orderRef.update({ whatsappNotificationStatus: "sent", whatsappNotifiedAt: Date.now() });
   } catch (error) {
