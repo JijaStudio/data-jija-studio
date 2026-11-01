@@ -28,10 +28,36 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = $("checkout-form");
     if (!form) return;
+    const paymentBox = document.querySelector(".payment-box");
+    function applyPaymentSettings() {
+      const settings = window.jijaFirebaseSettings || {};
+      const payment = settings.paymentSettings || {};
+      const razorpayEnabled = payment.razorpayEnabled !== false;
+      const upiEnabled = payment.upiEnabled === true;
+      const button = form.querySelector('[type="submit"]');
+      if (button) {
+        button.disabled = !razorpayEnabled;
+        button.textContent = razorpayEnabled ? "Pay securely with Razorpay" : "Online payment currently unavailable";
+      }
+      if (paymentBox) paymentBox.hidden = !upiEnabled;
+      const upi = $("upi-id");
+      if (upi && (settings.upiId || payment.upiId)) upi.textContent = settings.upiId || payment.upiId;
+      const payee = paymentBox?.querySelector("strong");
+      if (payee && payment.upiName) payee.textContent = "UPI payment · " + payment.upiName;
+      const qr = paymentBox?.querySelector(".qr-placeholder");
+      if (qr) qr.hidden = true;
+      const warning = paymentBox?.querySelector(".small-note");
+      if (warning) warning.textContent = "Manual UPI transfers are not automatically verified. Contact Jija Studio and wait for confirmation before treating an order as paid.";
+    }
+    applyPaymentSettings();
+    window.addEventListener("jija:firebase-data-loaded", applyPaymentSettings);
     // Capture before the legacy WhatsApp-order handler, replacing it with secure checkout.
     form.addEventListener("submit", async event => {
       event.preventDefault();
       event.stopImmediatePropagation();
+      const settings = window.jijaFirebaseSettings || {};
+      const payment = settings.paymentSettings || {};
+      if (payment.razorpayEnabled === false) { show("Online payment is disabled by the store. Please contact Jija Studio."); return; }
       const cart = JSON.parse(localStorage.getItem("jijaCart") || "[]");
       if (!cart.length) { show("Your bag is empty."); return; }
       if (!form.reportValidity()) return;
@@ -89,7 +115,6 @@
       }
     }, true);
     form.querySelector('[type="submit"]').textContent = "Pay securely with Razorpay";
-    const paymentBox = document.querySelector(".payment-box");
-    if (paymentBox) paymentBox.hidden = true;
+    applyPaymentSettings();
   });
 })();
