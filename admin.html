@@ -33,7 +33,7 @@ body.firebase-ready .firebase-login{display:none}
 <main class="admin-shell">
 <div class="admin-top"><div><p class="eyebrow">Store management</p><h1>Jija Studio Admin</h1><p>Manage products, homepage banners, and coupon details.</p></div><div class="admin-actions"><a class="button button-outline" href="orders.html">Manage orders ↗</a><a class="button button-outline" href="index.html">View storefront ↗</a></div></div>
 <div class="admin-note"><strong>Firebase connected admin.</strong> Products and store settings are synced with Firebase Realtime Database for use across devices. Uploaded images/videos are currently stored as data in the database; use small files to avoid database limits.</div>
-<div class="admin-tabs"><button class="active" data-tab="products">Products</button><button data-tab="homepage">Homepage & banner</button><button data-tab="reviews">Reviews</button><button data-tab="coupon">Coupons</button><button data-tab="media">Media URL converter</button><button data-tab="backup">Backup / restore</button></div>
+<div class="admin-tabs"><button class="active" data-tab="products">Products</button><button data-tab="homepage">Homepage & banner</button><button data-tab="payments">Payment settings</button><button data-tab="reviews">Reviews</button><button data-tab="coupon">Coupons</button><button data-tab="media">Media URL converter</button><button data-tab="backup">Backup / restore</button></div>
 <section class="admin-panel" data-panel="products"><h2>Product catalogue</h2>
 <div class="admin-grid">
 <div class="admin-field full"><label for="product-select">Select product to edit</label><select id="product-select"><option value="">Loading products…</option></select></div>
@@ -93,6 +93,19 @@ body.firebase-ready .firebase-login{display:none}
 <div class="admin-field"><label for="h-contact-title">Contact / WhatsApp section heading</label><input id="h-contact-title"></div>
 <div class="admin-field"><label for="h-contact-copy">Contact / WhatsApp section description</label><input id="h-contact-copy"></div>
 </div><div class="admin-actions"><button class="button button-primary" id="save-home">Save homepage settings</button></div><div class="admin-status" id="home-status" role="status"></div>
+</section>
+<section class="admin-panel" data-panel="payments" hidden>
+<h2>Payment settings</h2>
+<p>Choose which payment methods the storefront should offer. These settings are saved to Firebase Realtime Database under <code>settings/paymentSettings</code>. Razorpay API secrets remain in Firebase Functions secrets, never here.</p>
+<div class="admin-grid">
+<div class="admin-field full"><label><input id="pay-razorpay-enabled" type="checkbox" checked> Enable secure online payment (Razorpay)</label><small>Customers can pay by the methods enabled in your Razorpay account. The backend must be deployed and configured.</small></div>
+<div class="admin-field full"><label><input id="pay-upi-enabled" type="checkbox"> Show manual UPI payment details</label><small>Manual UPI transfers are not automatically verified by this website. Confirm receipt before marking an order paid.</small></div>
+<div class="admin-field"><label for="pay-upi-id">UPI ID</label><input id="pay-upi-id" placeholder="yourname@bank" autocomplete="off"></div>
+<div class="admin-field"><label for="pay-upi-name">UPI payee name</label><input id="pay-upi-name" placeholder="Jija Studio" autocomplete="off"></div>
+<div class="admin-field full"><label><input id="pay-cod-enabled" type="checkbox"> Enable Cash on Delivery</label><small>Only enable COD if you have a process to record and manage COD orders.</small></div>
+</div>
+<div class="admin-actions"><button class="button button-primary" type="button" id="save-payment-settings">Save payment settings to Firebase</button></div>
+<div class="admin-status" id="payment-settings-status" role="status"></div>
 </section>
 <section class="admin-panel" data-panel="reviews" hidden><h2>Customer reviews</h2><p>Manage the reviews shown on the homepage. Add a review, edit its details, or delete it. Only add genuine customer feedback with permission.</p><div class="admin-grid"><div class="admin-field"><label for="review-name">Customer name</label><input id="review-name" placeholder="Customer name"></div><div class="admin-field"><label for="review-rating">Star rating</label><select id="review-rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></div><div class="admin-field full"><label for="review-text">Review</label><textarea id="review-text" placeholder="Customer's review"></textarea></div></div><div class="admin-actions"><button type="button" class="button button-primary" id="review-save">Add review</button><button type="button" class="button button-outline" id="review-cancel" hidden>Cancel edit</button></div><div class="admin-status" id="review-status" role="status"></div><div id="review-admin-list" class="admin-products" style="margin-top:16px"></div></section>
 <section class="admin-panel" data-panel="coupon" hidden><h2>Coupon settings</h2><div class="admin-grid">
@@ -296,5 +309,6 @@ window.addEventListener('jija:admin-firebase-ready',(event)=>{
 })();
 </script>
 <script type="module" src="js/admin-firebase.js"></script>
+<script type="module" src="js/payment-settings.js"></script>
 <script type="module" src="js/media-url-tool.js"></script>
 </body></html>
