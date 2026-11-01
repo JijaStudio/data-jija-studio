@@ -65,6 +65,9 @@ saveButton?.addEventListener('click', async () => {
       ...JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}'),
       paymentSettings, upiId, upiName
     }));
+    window.dispatchEvent(new CustomEvent('jija:payment-settings-saved', { detail: paymentSettings }));
+    window.jijaFirebaseSettings = { ...(window.jijaFirebaseSettings || {}), upiId, upiName, paymentSettings };
+    window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded', { detail: { settingsLoaded: true, productsLoaded: true } }));
     show('Saved successfully. Firebase now has settings/paymentSettings. Refresh the storefront to load the new options.');
   } catch (error) {
     show('Save failed: ' + (error.code || error.message) + '. Check Firebase Realtime Database rules.', true);
