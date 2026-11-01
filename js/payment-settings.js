@@ -18,7 +18,6 @@ async function loadSettings() {
   const payment = settings.paymentSettings || {};
   $('pay-razorpay-enabled').checked = payment.razorpayEnabled !== false;
   $('pay-upi-enabled').checked = payment.upiEnabled === true;
-  $('pay-cod-enabled').checked = payment.codEnabled === true;
   $('pay-upi-id').value = settings.upiId || payment.upiId || '';
   $('pay-upi-name').value = settings.upiName || payment.upiName || 'Jija Studio';
 }
@@ -51,7 +50,6 @@ saveButton?.addEventListener('click', async () => {
     const paymentSettings = {
       razorpayEnabled: $('pay-razorpay-enabled').checked,
       upiEnabled: $('pay-upi-enabled').checked,
-      codEnabled: $('pay-cod-enabled').checked,
       upiId,
       upiName,
       updatedAt: Date.now(),
