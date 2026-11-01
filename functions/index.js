@@ -4,7 +4,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 const crypto = require("node:crypto");
 
-initializeApp();
+initializeApp({ databaseURL: "https://jija-7c104-default-rtdb.firebaseio.com" });
 const db = getDatabase();
 const RAZORPAY_KEY_ID = defineSecret("RAZORPAY_KEY_ID");
 const RAZORPAY_KEY_SECRET = defineSecret("RAZORPAY_KEY_SECRET");
@@ -194,5 +194,21 @@ exports.razorpayWebhook = onRequest({ region: REGION, secrets: [RAZORPAY_KEY_SEC
   } catch (error) {
     console.error("razorpayWebhook failed:", error);
     return res.status(500).send("Retry");
+  }
+});
+
+exports.getOrderStatus = onRequest({ region: REGION, cors: false }, async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== "POST") return jsonError(res, 405, "Method not allowed.");
+  try {
+    const orderId = cleanText(req.body?.orderId, 120);
+    if (!orderId) return jsonError(res, 400, "Order ID is required.");
+    const snap = await db.ref("orders/" + orderId).get();
+    if (!snap.exists()) return jsonError(res, 404, "Order not found.");
+    const order = snap.val();
+    return res.status(200).json({ orderId, orderNumber: order.orderNumber, paymentStatus: order.paymentStatus, orderStatus: order.orderStatus });
+  } catch (error) {
+    console.error("getOrderStatus failed:", error);
+    return jsonError(res, 500, "Could not check order status.");
   }
 });
