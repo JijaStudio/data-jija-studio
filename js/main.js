@@ -36,6 +36,14 @@ function applyAdminCatalogueAndPaymentSettings() {
   if (!settings) { try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch { settings = {}; } }
   if (settings.upiId && /^[^\\s@]+@[^\\s@]+$/.test(settings.upiId)) STORE_CONFIG.upiId = settings.upiId;
   if (settings.upiName) STORE_CONFIG.upiName = settings.upiName;
+  STORE_CONFIG.paymentSettings = settings.paymentSettings || { razorpayEnabled: true, upiEnabled: false };
+  const paymentBanner = document.querySelector('#payment-methods-banner');
+  if (paymentBanner) {
+    const methods = [];
+    if (STORE_CONFIG.paymentSettings.razorpayEnabled !== false) methods.push('Secure online payment');
+    if (STORE_CONFIG.paymentSettings.upiEnabled === true && settings.upiId) methods.push('UPI transfer');
+    paymentBanner.textContent = methods.length ? 'Payment options: ' + methods.join(' · ') + ' — available at checkout.' : 'Please contact Jija Studio to confirm available payment methods.';
+  }
   if (Array.isArray(savedProducts)) {
     const deleted = new Set(savedProducts.filter(p => p && p._deleted).map(p => String(p.id)));
     const custom = savedProducts.filter(p => p && !p._deleted && !isDemoProduct(p)), ids = new Set(custom.map(p => String(p.id)));
