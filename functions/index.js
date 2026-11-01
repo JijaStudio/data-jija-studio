@@ -148,6 +148,9 @@ exports.createRazorpayOrder = onRequest({ region: REGION, secrets: [RAZORPAY_KEY
   if (cors(req, res)) return;
   if (req.method !== "POST") return jsonError(res, 405, "Method not allowed.");
   try {
+    const paymentSettingsSnap = await db.ref("settings/paymentSettings").get();
+    const paymentSettings = paymentSettingsSnap.exists() ? (paymentSettingsSnap.val() || {}) : {};
+    if (paymentSettings.razorpayEnabled === false) return jsonError(res, 403, "Online Razorpay payment is disabled by the store administrator.");
     const orderData = await computeOrder(req.body || {});
     const internalId = db.ref("orders").push().key;
     const orderNumber = "JJS-" + Date.now().toString().slice(-8) + "-" + crypto.randomBytes(2).toString("hex").toUpperCase();
