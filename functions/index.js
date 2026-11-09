@@ -156,7 +156,7 @@ exports.createRazorpayOrder = onRequest({ region: REGION, secrets: [RAZORPAY_KEY
     const orderNumber = "JJS-" + Date.now().toString().slice(-8) + "-" + crypto.randomBytes(2).toString("hex").toUpperCase();
     const amountPaise = Math.round(orderData.total * 100);
     const rpOrder = await razorpayRequest("/orders", "POST", { amount: amountPaise, currency: "INR", receipt: internalId.slice(0, 40), notes: { internalOrderId: internalId, orderNumber, store: "Jija Studio" } });
-    const record = { ...orderData, id: internalId, orderNumber, currency: "INR", amountPaise, razorpayOrderId: rpOrder.id, paymentStatus: "pending", orderStatus: "payment_pending", createdAt: Date.now(), whatsappNotificationStatus: "pending" };
+    const record = { ...orderData, id: internalId, orderNumber, currency: "INR", amountPaise, razorpayOrderId: rpOrder.id, paymentStatus: "pending", orderStatus: "payment_pending", createdAt: Date.now(), whatsappNotificationStatus: "not_configured" };
     await db.ref("orders/" + internalId).set(record);
     return res.status(200).json({ keyId: RAZORPAY_KEY_ID.value(), orderId: internalId, orderNumber, razorpayOrderId: rpOrder.id, amount: amountPaise, currency: "INR", customer: { name: orderData.customer.name, phone: orderData.customer.phone } });
   } catch (error) {
@@ -164,7 +164,7 @@ exports.createRazorpayOrder = onRequest({ region: REGION, secrets: [RAZORPAY_KEY
     return jsonError(res, 400, error.message || "Could not create checkout.");
   }
 });
-exports.verifyRazorpayPayment = onRequest({ region: REGION, secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_STORE_NUMBER, WHATSAPP_ORDER_TEMPLATE, WHATSAPP_CUSTOMER_TEMPLATE], cors: false }, async (req, res) => {
+exports.verifyRazorpayPayment = onRequest({ region: REGION, secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET], cors: false }, async (req, res) => {
   if (cors(req, res)) return;
   if (req.method !== "POST") return jsonError(res, 405, "Method not allowed.");
   try {
@@ -181,7 +181,7 @@ exports.verifyRazorpayPayment = onRequest({ region: REGION, secrets: [RAZORPAY_K
     return jsonError(res, 400, error.message || "Could not verify payment.");
   }
 });
-exports.razorpayWebhook = onRequest({ region: REGION, secrets: [RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET, WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_STORE_NUMBER, WHATSAPP_ORDER_TEMPLATE, WHATSAPP_CUSTOMER_TEMPLATE], cors: false }, async (req, res) => {
+exports.razorpayWebhook = onRequest({ region: REGION, secrets: [RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET], cors: false }, async (req, res) => {
   if (req.method !== "POST") return res.status(405).send("Method not allowed.");
   const signature = req.get("X-Razorpay-Signature") || "";
   const expected = hmac(req.rawBody, RAZORPAY_WEBHOOK_SECRET.value());
