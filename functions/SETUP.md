@@ -1,4 +1,4 @@
-# Jija Studio Razorpay + WhatsApp setup
+# Jija Studio Razorpay checkout setup
 
 The files in GitHub are source code only. **A GitHub commit does not deploy Firebase Functions.** The endpoints will remain missing until you deploy them to Firebase project `jija-7c104`.
 
@@ -10,7 +10,7 @@ The files in GitHub are source code only. **A GitHub commit does not deploy Fire
 - Firebase project on the **Blaze (pay-as-you-go) plan**; Cloud Functions deployment generally requires billing to be enabled.
 - Razorpay Test Mode Key ID and Key Secret.
 - A webhook secret for Razorpay.
-- Meta WhatsApp Cloud API credentials and approved templates, if automatic WhatsApp notifications are required.
+- Meta WhatsApp Cloud API credentials are not required for Razorpay checkout; automatic WhatsApp notifications are a separate future setup.
 
 The repository now includes `.firebaserc` so Firebase CLI uses `jija-7c104` by default. You can still explicitly pass `--project jija-7c104`.
 
@@ -27,20 +27,15 @@ npm install
 cd ..
 ```
 
-Set each secret when prompted; do not paste secret values into source files or commit them:
+Set only the three payment secrets below for Razorpay checkout. The CLI prompts for each value; never paste secrets into source files or commit them:
 
 ```bash
 firebase functions:secrets:set RAZORPAY_KEY_ID --project jija-7c104
 firebase functions:secrets:set RAZORPAY_KEY_SECRET --project jija-7c104
 firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET --project jija-7c104
-firebase functions:secrets:set WHATSAPP_TOKEN --project jija-7c104
-firebase functions:secrets:set WHATSAPP_PHONE_NUMBER_ID --project jija-7c104
-firebase functions:secrets:set WHATSAPP_STORE_NUMBER --project jija-7c104
-firebase functions:secrets:set WHATSAPP_ORDER_TEMPLATE --project jija-7c104
-firebase functions:secrets:set WHATSAPP_CUSTOMER_TEMPLATE --project jija-7c104
 ```
 
-If you are not ready to configure WhatsApp, enter placeholder values for the four WhatsApp identifiers/templates and token only if Firebase requires all declared secrets to exist; do not expect notifications to work until real credentials and approved templates are configured. Do not use a real customer's number for test messages.
+WhatsApp secrets are intentionally not required by the checkout functions, so do not create placeholder WhatsApp secrets just to deploy payments.
 
 ## 3. Deploy and confirm endpoints
 
@@ -64,11 +59,7 @@ If deployment fails, copy the **first error and the surrounding lines** from the
 
 In Razorpay Dashboard **Test Mode**, configure the webhook URL shown for `razorpayWebhook` after deployment, use the same value configured as `RAZORPAY_WEBHOOK_SECRET`, and subscribe to `payment.captured`. Keep Test Mode enabled until checkout, payment failure, webhook retry, and verification have been tested.
 
-## 5. WhatsApp templates
-
-Configure the exact approved template names in `WHATSAPP_ORDER_TEMPLATE` and `WHATSAPP_CUSTOMER_TEMPLATE`. Both templates are expected to accept three body parameters: order number, customer name, and total amount. Ensure customers have opted in.
-
-## 6. Security and testing
+## 5. Security and testing
 
 - Configure Firebase Realtime Database rules so public clients cannot read/write `orders`; only authenticated admins should be able to read orders and update fulfilment status. The Admin SDK writes order records server-side.
 - The backend recalculates product prices and shipping from Firebase; it does not trust client totals.
