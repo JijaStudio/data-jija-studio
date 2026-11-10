@@ -83,7 +83,7 @@ async function loadOrders() {
         '</div><div><strong>Payment</strong><br>' + money(order.total) + ' · ' + esc(order.razorpayPaymentId || "Not captured") +
         '<br><span class="muted">Created ' + new Date(order.createdAt || Date.now()).toLocaleString("en-IN") + '</span></div></div>' +
         '<ul class="order-items">' + itemHtml + '</ul>' + statusTools +
-        '<p class="muted">Automatic WhatsApp alert: ' + esc(notifyStatus) + '</p></article>';
+        '<p class="muted">Automatic WhatsApp alert: ' + esc(notifyStatus) + '</p>' + (paid ? '<button class="button button-outline" data-notify-order="' + esc(order.id) + '">Send WhatsApp alert / retry</button>' : '') + '</article>';
     }).join("") || '<p>No checkout orders yet.</p>';
     $("orders-list").querySelectorAll("[data-save-order]").forEach(button => {
       button.addEventListener("click", async () => {
@@ -96,6 +96,22 @@ async function loadOrders() {
           $("orders-status").textContent = "Order status saved.";
         } catch (error) {
           $("orders-status").textContent = "Could not save status: " + error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+    $("orders-list").querySelectorAll("[data-notify-order]").forEach(button => {
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        const id = button.dataset.notifyOrder;
+        try {
+          const result = await api("/api/admin/notify-order", {id});
+          const label = result.notificationStatus === "sent" ? "WhatsApp alert sent." : result.notificationStatus === "not_configured" ? "WhatsApp Business API is not configured yet. Add the required Cloudflare secrets first." : result.notificationStatus === "sending" ? "Notification is already being sent." : "Notification status: " + result.notificationStatus;
+          $("orders-status").textContent = label;
+          await loadOrders();
+        } catch (error) {
+          $("orders-status").textContent = "Could not send WhatsApp alert: " + error.message;
         } finally {
           button.disabled = false;
         }
