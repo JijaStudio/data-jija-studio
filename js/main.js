@@ -434,6 +434,118 @@ function setupCart() {
   draw();
   const upi = document.querySelector('#upi-id'); if (upi) upi.textContent = STORE_CONFIG.upiId;
   const copy = document.querySelector('#copy-upi'); copy?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(STORE_CONFIG.upiId); showToast('UPI ID copied'); } catch { showToast('Please copy the UPI ID shown above'); } });
+  const paymentButton = document.querySelector('#razorpay-test-button');
+  const paymentNote = document.querySelector('#razorpay-test-note');
+  const paymentBackend = 'https://jija-studio-payments.jijastudio-payments-test.workers.dev';
+  let testCheckoutConfigured = false;
+  if (paymentButton) {
+    paymentButton.disabled = true;
+    fetch(paymentBackend + '/health', { headers: { 'Accept': 'application/json' } })
+      .then(response => response.json())
+      .then(health => {
+        testCheckoutConfigured = health.paymentConfigured === true && health.orderStorageConfigured === true && health.firebaseCatalogueReadable === true;
+        paymentButton.disabled = !testCheckoutConfigured;
+        if (paymentNote) paymentNote.textContent = testCheckoutConfigured
+          ? 'Razorpay Test Mode is ready. Test payments do not collect real money.'
+          : 'Online test checkout is not ready yet. Use WhatsApp ordering while the secure test credentials are configured.';
+      })
+      .catch(() => {
+        if (paymentNote) paymentNote.textContent = 'The secure checkout service could not be reached. You can still place an order request through WhatsApp.';
+      });
+    paymentButton.addEventListener('click', async () => {
+      const status = document.querySelector('#checkout-message');
+      const say = message => { if (status) { status.hidden = false; status.textContent = message; } };
+      const form = document.querySelector('#checkout-form');
+      if (!form || !form.reportValidity()) return;
+      const cart = getCart().filter(item => findProduct(item.id));
+      if (!cart.length) { showToast('Your bag is empty'); return; }
+      if (!validateCartStock(cart, true)) { draw(); return; }
+      const formData = new FormData(form);
+      const customer = {
+        name: String(formData.get('customerName') || '').trim(),
+        phone: String(formData.get('customerPhone') || '').trim(),
+        address: String(formData.get('customerAddress') || '').trim(),
+        pin: String(formData.get('customerPin') || '').trim()
+      };
+      if (!window.Razorpay) {
+        say('The secure payment window did not load. Please refresh the page or use WhatsApp ordering.');
+        return;
+      }
+      paymentButton.disabled = true;
+      paymentButton.textContent = 'Preparing secure checkout…';
+      say('Checking product prices and stock securely…');
+      try {
+        const response = await fetch(paymentBackend + '/api/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            cart: cart.map(item => ({
+              id: String(item.id),
+              quantity: Number(item.quantity),
+              size: String(item.size || 'One Size'),
+              colour: String(item.colour || '')
+            })),
+            customer
+          })
+        });
+        const orderData = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(orderData.error || 'Secure checkout is not available yet.');
+        const checkout = new window.Razorpay({
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'Jija Studio',
+          description: 'Jija Studio order · Test Mode',
+          order_id: orderData.razorpayOrderId,
+          prefill: { name: customer.name, contact: customer.phone },
+          notes: { jija_order_id: orderData.internalOrderId },
+          theme: { color: '#174d38' },
+          handler: async function (paymentResponse) {
+            say('Payment was submitted. Verifying it securely with Razorpay…');
+            try {
+              const verifyResponse = await fetch(paymentBackend + '/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                  internalOrderId: orderData.internalOrderId,
+                  razorpay_order_id: paymentResponse.razorpay_order_id,
+                  razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                  razorpay_signature: paymentResponse.razorpay_signature
+                })
+              });
+              const verification = await verifyResponse.json().catch(() => ({}));
+              if (!verifyResponse.ok || verification.verified !== true) {
+                throw new Error(verification.error || 'Payment could not be verified yet. Please contact Jija Studio before retrying.');
+              }
+              saveCart([]);
+              form.reset();
+              draw();
+              say('Test payment verified successfully. Test order reference: ' + verification.orderId + '. This is a test order; live payments are not enabled.');
+              if (paymentNote) paymentNote.textContent = 'Test payment verified. Live payments remain disabled.';
+            } catch (error) {
+              say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
+            } finally {
+              paymentButton.disabled = !testCheckoutConfigured;
+              paymentButton.textContent = 'Pay securely (Test Mode)';
+            }
+          }
+        });
+        checkout.on('payment.failed', function (failure) {
+          const message = failure && failure.error && failure.error.description
+            ? failure.error.description
+            : 'The test payment was not completed.';
+          say(message + ' No paid order has been confirmed. You may retry or use WhatsApp ordering.');
+        });
+        checkout.open();
+        say('Razorpay Test Mode opened. Complete a test payment to continue.');
+      } catch (error) {
+        say(error.message || 'Secure checkout could not be started. Use WhatsApp ordering for now.');
+      } finally {
+        paymentButton.disabled = !testCheckoutConfigured;
+        paymentButton.textContent = 'Pay securely (Test Mode)';
+      }
+    });
+  }
   const form = document.querySelector('#checkout-form');
   form?.addEventListener('invalid', event => {
     const status = document.querySelector('#checkout-message');
