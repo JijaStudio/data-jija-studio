@@ -435,6 +435,13 @@ function setupCart() {
   const upi = document.querySelector('#upi-id'); if (upi) upi.textContent = STORE_CONFIG.upiId;
   const copy = document.querySelector('#copy-upi'); copy?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(STORE_CONFIG.upiId); showToast('UPI ID copied'); } catch { showToast('Please copy the UPI ID shown above'); } });
   const form = document.querySelector('#checkout-form');
+  form?.addEventListener('invalid', event => {
+    const status = document.querySelector('#checkout-message');
+    if (status) {
+      status.hidden = false;
+      status.textContent = 'Please complete the required delivery details above. Once they are valid, tap Place Order on WhatsApp again.';
+    }
+  }, true);
   form?.addEventListener('submit', event => {
     event.preventDefault(); const cart = getCart(); if (!cart.length) { showToast('Your bag is empty'); return; }
     if (!validateCartStock(cart,true)) { draw(); return; }
@@ -449,8 +456,14 @@ function setupCart() {
       status.hidden = false;
       status.innerHTML = 'If WhatsApp does not open automatically, <a href="' + escapeHTML(orderUrl) + '" target="_blank" rel="noopener noreferrer">tap here to open your order message</a>. Then press Send in WhatsApp. You can also message <a href="https://wa.me/918600761346" target="_blank" rel="noopener noreferrer">+91 86007 61346</a>. Your cart has not been cleared.';
     }
-    // Navigate in the current tab to avoid popup blockers on mobile browsers.
-    window.location.href = orderUrl;
+    // Open WhatsApp directly from the user's submit action. Keep the cart page open
+    // so the customer can use the visible fallback link if their browser blocks the launch.
+    const whatsappWindow = window.open(orderUrl, '_blank');
+    if (whatsappWindow) {
+      try { whatsappWindow.opener = null; } catch {}
+    } else if (status) {
+      status.insertAdjacentHTML('afterbegin', '<p><strong>WhatsApp did not open automatically.</strong> Please tap the order-message link above.</p>');
+    }
   });
 }
 function setupContact() {
