@@ -6,7 +6,9 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  EmailAuthProvider,
+  linkWithCredential
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 const PAYMENT_BACKEND = "https://jija-studio-payments.jijastudio-payments-test.workers.dev";
@@ -55,6 +57,31 @@ async function createAccount({ name, email, phone, password }) {
   return result.user;
 }
 
+async function upgradePhoneAccount({ email, password, name, phone, address, pin }) {
+  const user = auth.currentUser;
+  if (!user || !user.phoneNumber || user.email) {
+    throw new Error("This option is only for an existing signed-in mobile-only account.");
+  }
+  const normalizedEmail = String(email || "").trim();
+  const normalizedName = String(name || user.displayName || "").trim();
+  if (normalizedName.length < 2) throw new Error("Please complete your full name in your profile first.");
+  if (!normalizedEmail) throw new Error("Enter the email address you want to use to sign in.");
+  if (String(password || "").length < 6) throw new Error("Use a password with at least 6 characters.");
+  const credential = EmailAuthProvider.credential(normalizedEmail, String(password));
+  const linked = await linkWithCredential(user, credential);
+  await api("/api/customer/profile", {
+    method: "POST",
+    body: {
+      name: normalizedName,
+      email: normalizedEmail,
+      phone: String(phone || linked.user.phoneNumber || "").trim(),
+      address: String(address || "").trim(),
+      pin: String(pin || "").trim()
+    }
+  });
+  return linked.user;
+}
+
 async function resetPassword(email) {
   const normalized = String(email || "").trim();
   if (!normalized) throw new Error("Enter the email address registered to your account first.");
@@ -73,6 +100,7 @@ window.JijaCustomerAuth = {
   api,
   signIn,
   createAccount,
+  upgradePhoneAccount,
   resetPassword,
   signOut,
   backend: PAYMENT_BACKEND
