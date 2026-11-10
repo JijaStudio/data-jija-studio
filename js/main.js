@@ -3,8 +3,9 @@
 // IMPORTANT: replace these placeholders before launch. Use country code, digits only.
 const STORE_CONFIG = {
   storeName: 'Jija Studio',
-  whatsappNumber: '919673960373', // Jija Studio WhatsApp number
-  phoneDisplay: '+91 96739 60373',
+  contactName: 'Sharvari Jadhav',
+  whatsappNumber: '918600761346', // Sharvari Jadhav — Jija Studio WhatsApp orders
+  phoneDisplay: '+91 86007 61346',
   upiId: 'yourname@upi', // PLACEHOLDER: replace with your verified UPI ID
   upiName: 'Jija Studio',
   currency: 'INR'
@@ -36,12 +37,11 @@ function applyAdminCatalogueAndPaymentSettings() {
   if (!settings) { try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch { settings = {}; } }
   if (settings.upiId && /^[^\\s@]+@[^\\s@]+$/.test(settings.upiId)) STORE_CONFIG.upiId = settings.upiId;
   if (settings.upiName) STORE_CONFIG.upiName = settings.upiName;
-  STORE_CONFIG.paymentSettings = settings.paymentSettings || { razorpayEnabled: true, upiEnabled: false };
+  STORE_CONFIG.paymentSettings = { razorpayEnabled: false, upiEnabled: false };
   const paymentBanner = document.querySelector('#payment-methods-banner');
   if (paymentBanner) {
     const methods = [];
-    if (STORE_CONFIG.paymentSettings.razorpayEnabled !== false) methods.push('Secure online payment');
-    if (STORE_CONFIG.paymentSettings.upiEnabled === true && settings.upiId) methods.push('UPI transfer');
+    methods.push('WhatsApp order and direct payment coordination');
     paymentBanner.textContent = methods.length ? 'Payment options: ' + methods.join(' · ') + ' — available at checkout.' : 'Please contact Jija Studio to confirm available payment methods.';
   }
   if (Array.isArray(savedProducts)) {
@@ -347,7 +347,7 @@ function readWishlist(){try{return JSON.parse(localStorage.getItem(WISHLIST_KEY)
 function toggleWishlist(id){const ids=readWishlist();const next=ids.includes(String(id))?ids.filter(x=>x!==String(id)):[...ids,String(id)];try{localStorage.setItem(WISHLIST_KEY,JSON.stringify(next));}catch(error){showToast('Wishlist could not be saved in this browser.');console.warn('Wishlist could not be saved.',error);return;}updateCartCount();showToast(next.includes(String(id))?'Added to your wishlist':'Removed from your wishlist');}
 function renderWishlist(){const root=document.querySelector('#wishlist-products');if(!root)return;const ids=readWishlist();const items=ids.map(id=>findProduct(id)).filter(Boolean);if(!items.length){root.innerHTML='<p class="empty-state">Your wishlist is empty. Tap the heart on a product to save it here.</p>';return;}renderProducts(root,items);}
 function renderHomepageReviews(){const root=document.querySelector('#homepage-reviews');if(!root)return;let settings={};try{settings=JSON.parse(localStorage.getItem('jijaAdminSettings')||'{}')||{};}catch{}const reviews=Array.isArray(settings.reviews)?settings.reviews:[];root.innerHTML=reviews.length?reviews.map(r=>'<article class="review-card"><div class="review-stars" aria-label="'+Math.max(1,Math.min(5,Number(r.rating)||5))+' out of 5 stars">'+('★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5))))+('☆'.repeat(5-Math.max(1,Math.min(5,Number(r.rating)||5))))+'</div><h3>'+escapeHTML(r.name||'Customer')+'</h3><p>'+escapeHTML(r.text||'')+'</p></article>').join(''):'<p>No reviews published yet. We welcome your feedback!</p>';}
-function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'919673960373';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
+function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'918600761346';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
 
 function setupHome() {
   setupHomepageAnimations();
@@ -443,7 +443,7 @@ function setupCart() {
     if (!name || !phone || !address || !pin) { showToast('Please complete all delivery details'); return; }
     const lines = cart.map(item => { const p = findProduct(item.id); return `• ${p.name} (${item.size || 'One Size'}${item.colour ? ', '+item.colour : ''}) × ${item.quantity} — ${money((p.salePrice || p.price) * item.quantity)}`; });
     const subtotal = cart.reduce((sum,item) => sum + (findProduct(item.id).salePrice || findProduct(item.id).price) * item.quantity,0); const shipping=subtotal>=freeThreshold?0:flatShippingFee; const total=subtotal+shipping;
-    const message = `Hello Jija Studio! I'd like to place an order.\n\nORDER ITEMS\n${lines.join('\n')}\n\nSubtotal: ${money(subtotal)}\nDelivery: ${shipping===0?'FREE':money(shipping)}\nTotal including delivery: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability, shipping charges and payment instructions. I understand this message is an order request, not a confirmed payment.`;
+    const message = `Hello Sharvari Jadhav! I'd like to place an order from Jija Studio.\n\nORDER ITEMS\n${lines.join('\n')}\n\nSubtotal: ${money(subtotal)}\nDelivery: ${shipping===0?'FREE':money(shipping)}\nTotal including delivery: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability, shipping charges and payment instructions. I understand this message is an order request, not a confirmed payment.`;
     window.open(whatsappLink(message), '_blank', 'noopener,noreferrer');
     const status = document.querySelector('#checkout-message'); if(status) { status.hidden = false; status.textContent = 'WhatsApp opened with your order request. Send the message to the store and wait for confirmation. Your cart has not been cleared.'; }
   });

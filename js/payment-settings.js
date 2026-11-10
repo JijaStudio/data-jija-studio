@@ -16,8 +16,7 @@ async function loadSettings() {
   const snapshot = await get(ref(database, 'settings'));
   const settings = snapshot.exists() ? (snapshot.val() || {}) : {};
   const payment = settings.paymentSettings || {};
-  $('pay-razorpay-enabled').checked = payment.razorpayEnabled !== false;
-  $('pay-upi-enabled').checked = payment.upiEnabled === true;
+  
   $('pay-upi-id').value = settings.upiId || payment.upiId || '';
   $('pay-upi-name').value = settings.upiName || payment.upiName || 'Jija Studio';
 }
@@ -41,15 +40,12 @@ saveButton?.addEventListener('click', async () => {
   if (!auth.currentUser) return show('Please sign in again before saving.', true);
   const upiId = $('pay-upi-id').value.trim();
   const upiName = $('pay-upi-name').value.trim() || 'Jija Studio';
-  if ($('pay-upi-enabled').checked && !/^[^\s@]+@[^\s@]+$/.test(upiId)) {
-    return show('Enter a valid UPI ID or turn off manual UPI payments.', true);
-  }
   saveButton.disabled = true;
   show('Saving payment settings to Firebase…');
   try {
     const paymentSettings = {
-      razorpayEnabled: $('pay-razorpay-enabled').checked,
-      upiEnabled: $('pay-upi-enabled').checked,
+      razorpayEnabled: false,
+      upiEnabled: false,
       upiId,
       upiName,
       updatedAt: Date.now(),
@@ -68,7 +64,7 @@ saveButton?.addEventListener('click', async () => {
     window.dispatchEvent(new CustomEvent('jija:payment-settings-saved', { detail: paymentSettings }));
     window.jijaFirebaseSettings = { ...(window.jijaFirebaseSettings || {}), upiId, upiName, paymentSettings };
     window.dispatchEvent(new CustomEvent('jija:firebase-data-loaded', { detail: { settingsLoaded: true, productsLoaded: true } }));
-    show('Saved successfully. Firebase now has settings/paymentSettings. Refresh the storefront to load the new options.');
+    show('Saved successfully. Razorpay is disabled; orders are handled through WhatsApp. Refresh the storefront to load updated contact/payment settings.');
   } catch (error) {
     show('Save failed: ' + (error.code || error.message) + '. Check Firebase Realtime Database rules.', true);
   } finally {

@@ -79,7 +79,7 @@ body.firebase-ready .firebase-login{display:none}
 <div class="admin-field"><label for="h-banner-url">Banner image/video URL or path</label><input id="h-banner-url" placeholder="images/festival-banner.jpg or video URL"></div>
 <div class="admin-field full"><label for="h-banner-file">Upload banner image (recommended under 1 MB)</label><input id="h-banner-file" type="file" accept="image/png,image/jpeg,image/webp"><img id="h-banner-preview" class="admin-preview" alt="Banner preview" hidden></div>
 <div class="admin-field full"><label for="h-banner-alt">Banner image description (accessibility)</label><input id="h-banner-alt" placeholder="Jija Studio festive collection"></div>
-<div class="admin-field"><label for="h-whatsapp">WhatsApp mobile number (10 digits, India)</label><input id="h-whatsapp" inputmode="numeric" maxlength="10" value="9673960373"></div>
+<div class="admin-field"><label for="h-whatsapp">WhatsApp mobile number (Sharvari Jadhav · 10 digits, India)</label><input id="h-whatsapp" inputmode="numeric" maxlength="10" value="8600761346"></div>
 <div class="admin-field"><label for="h-upi-id">Payment UPI ID</label><input id="h-upi-id" placeholder="yourname@bank"></div>
 <div class="admin-field"><label for="h-upi-name">UPI account / payee name</label><input id="h-upi-name" placeholder="Jija Studio"></div>
 <div class="admin-field"><label for="h-collections-title">Collections section heading</label><input id="h-collections-title" placeholder="Shop by collection"></div>
@@ -95,11 +95,11 @@ body.firebase-ready .firebase-login{display:none}
 </div><div class="admin-actions"><button class="button button-primary" id="save-home">Save homepage settings</button></div><div class="admin-status" id="home-status" role="status"></div>
 </section>
 <section class="admin-panel" data-panel="payments" hidden>
-<h2>Payment settings</h2>
-<p>Choose which payment methods the storefront should offer. These settings are saved to Firebase Realtime Database under <code>settings/paymentSettings</code>. Razorpay API secrets remain in Firebase Functions secrets, never here.</p>
+<h2>WhatsApp order & payment settings</h2>
+<p>Customers place orders through WhatsApp. Sharvari Jadhav confirms the order and shares payment instructions directly with the customer. These settings are saved to Firebase Realtime Database under <code>settings</code>.</p>
 <div class="admin-grid">
-<div class="admin-field full"><label><input id="pay-razorpay-enabled" type="checkbox" checked> Enable secure online payment (Razorpay)</label><small>Customers can pay by the methods enabled in your Razorpay account. The backend must be deployed and configured.</small></div>
-<div class="admin-field full"><label><input id="pay-upi-enabled" type="checkbox"> Show manual UPI payment details</label><small>Manual UPI transfers are not automatically verified by this website. Confirm receipt before marking an order paid.</small></div>
+
+<div class="admin-field full"><p>Razorpay checkout is not used. UPI ID or QR code can be shared by Sharvari through WhatsApp after the order request is received.</p></div>
 <div class="admin-field"><label for="pay-upi-id">UPI ID</label><input id="pay-upi-id" placeholder="yourname@bank" autocomplete="off"></div>
 <div class="admin-field"><label for="pay-upi-name">UPI payee name</label><input id="pay-upi-name" placeholder="Jija Studio" autocomplete="off"></div>
 </div>
@@ -232,7 +232,7 @@ $('h-announcement').value=settings.announcement||'A little tradition, a lot of s
 $('h-palette').value=settings.colorPalette||'emerald';$('h-festival').value=settings.festivalTheme||'none';$('h-animation').value=settings.animationStyle||'fade';updateFestivalPreview();
 $('h-title').value=settings.heroTitle||'Wear your story.\nOwn your moment.';
 $('h-subtitle').value=settings.heroSubtitle||'From everyday favourites to celebration-ready looks, find fashion that feels beautifully you.';
-$('h-banner-type').value=settings.bannerType||'image';$('h-banner-url').value=settings.bannerSrc||'';$('h-banner-alt').value=settings.bannerAlt||'Jija Studio featured banner';$('h-whatsapp').value=(settings.whatsappNumber||'9673960373');$('h-upi-id').value=settings.upiId||'';$('h-upi-name').value=settings.upiName||'Jija Studio';
+$('h-banner-type').value=settings.bannerType||'image';$('h-banner-url').value=settings.bannerSrc||'';$('h-banner-alt').value=settings.bannerAlt||'Jija Studio featured banner';$('h-whatsapp').value=(settings.whatsappNumber||'8600761346');$('h-upi-id').value=settings.upiId||'';$('h-upi-name').value=settings.upiName||'Jija Studio';
 $('h-collections-title').value=settings.collectionsTitle||'Shop by collection';
 $('h-collections-subtitle').value=settings.collectionsSubtitle||'A little something for every wardrobe.';
 let collectionDraft=(Array.isArray(settings.collectionCards)&&settings.collectionCards.length?settings.collectionCards:[{title:"Ladies' wear",subtitle:"Everyday to occasion",category:"Ladies Wear",image:"images/placeholder-fashion.svg"},{title:"Sarees",subtitle:"Classic drapes, fresh stories",category:"Sarees",image:"images/placeholder-sarees.svg"},{title:"Kids' wear",subtitle:"Little looks, big smiles",category:"Kids Wear",image:"images/placeholder-kids.svg"},{title:"Jewellery",subtitle:"The finishing touch",category:"Jewellery",image:"images/placeholder-jewellery.svg"}]).map(c=>({...c}));
