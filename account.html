@@ -82,6 +82,18 @@
 </section>
 
 <section id="account-panel" hidden>
+<section id="upgrade-account-card" class="account-card" hidden>
+<p class="eyebrow">EXISTING CUSTOMER ACCOUNT</p>
+<h2>Keep your existing account</h2>
+<p class="account-note">You are still signed in with the earlier mobile-login method. Add an email and password to sign in next time without SMS. This keeps your existing account and order history.</p>
+<form id="upgrade-account-form">
+  <div class="form-group"><label for="upgrade-email">Email address *</label><input class="account-input" id="upgrade-email" type="email" autocomplete="email" required maxlength="160" placeholder="you@example.com"></div>
+  <div class="form-group"><label for="upgrade-password">Create password *</label><input class="account-input" id="upgrade-password" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters"></div>
+  <div class="form-group"><label for="upgrade-password-confirm">Confirm password *</label><input class="account-input" id="upgrade-password-confirm" type="password" autocomplete="new-password" required minlength="6" placeholder="Enter the same password again"></div>
+  <button class="button button-primary account-login-button" id="upgrade-account-button" type="submit">Add email and password</button>
+  <p id="upgrade-account-status" class="account-status" role="status" aria-live="polite"></p>
+</form>
+</section>
 <section class="account-card">
 <div class="account-order-top"><div><p class="eyebrow">YOUR PROFILE</p><h2>My Account</h2><p id="verified-phone" class="account-note"></p></div><button class="button button-outline" id="sign-out" type="button">Sign out</button></div>
 <form id="profile-form">
