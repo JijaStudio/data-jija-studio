@@ -1,7 +1,7 @@
 const $ = id => document.getElementById(id);
 const accountApi = () => window.JijaCustomerAuth;
 const auth = { get currentUser() { return accountApi()?.getUser() || null; } };
-let pendingOtpPhone = "";
+let pendingSignup = false;
 let loadedUid = "";
 let orderRefreshTimer = null;
 let orderLoadInProgress = false;
@@ -94,12 +94,13 @@ async function loadOrders() {
 }
 async function loadProfile(user) {
   if (!user) return;
-  $("verified-phone").textContent = "Verified mobile number: " + (user.phoneNumber || "verified");
+  $("verified-phone").textContent = "Signed in as " + (user.email || "your account") + (user.phoneNumber ? " · " + user.phoneNumber : "");
   try {
     const data = await accountApi().api("/api/customer/profile");
     const profile = data.profile;
     $("profile-name").value = profile?.name || user.displayName || "";
     $("profile-email").value = profile?.email || user.email || "";
+    $("profile-phone").value = profile?.phone || user.phoneNumber || "";
     $("profile-address").value = profile?.address || "";
     $("profile-pin").value = profile?.pin || "";
     sayProfile(profile ? "Your profile is saved." : "Add your name to finish setting up your account.");
@@ -127,46 +128,77 @@ function handleAuthChange(user) {
 window.addEventListener("jija-auth-change", event => handleAuthChange(event.detail?.user || null));
 accountApi().ready.then(user => handleAuthChange(user));
 
-$("phone-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  const button = $("send-otp");
-  button.disabled = true;
-  sayLogin("Preparing secure verification…");
-  try {
-    const phone = normalizeIndianPhone($("phone-input").value);
-    const result = await accountApi().sendOtp(phone);
-    pendingOtpPhone = result.phone || phone;
-    $("phone-input").value = pendingOtpPhone;
-    $("phone-form").hidden = true;
-    $("otp-form").hidden = false;
-    sayLogin("Verification code sent. Check your SMS messages.");
-    $("otp-input").focus();
-  } catch (error) {
-    sayLogin(error.message || "Could not send the verification code. Please try again.");
-  } finally { button.disabled = false; }
-});
-$("otp-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  if (!pendingOtpPhone) { sayLogin("Please request a new verification code."); return; }
-  const button = $("verify-otp");
-  button.disabled = true;
-  sayLogin("Verifying your number…");
-  try {
-    const code = $("otp-input").value.trim();
-    if (!/^\\d{6}$/.test(code)) throw new Error("Enter the six-digit code from the SMS.");
-    await accountApi().verifyOtp(pendingOtpPhone, code);
-    sayLogin("Mobile number verified. Your account is ready.");
-  } catch (error) {
-    sayLogin(error.message || "The code could not be verified. Please check it and retry.");
-  } finally { button.disabled = false; }
-});
-$("change-number").addEventListener("click", () => {
-  pendingOtpPhone = "";
-  $("otp-form").hidden = true;
-  $("phone-form").hidden = false;
-  $("otp-input").value = "";
+function setAuthMode(mode) {
+  const signup = mode === "signup";
+  $("auth-mode-signin").setAttribute("aria-pressed", String(!signup));
+  $("auth-mode-signup").setAttribute("aria-pressed", String(signup));
+  $("signin-form").hidden = signup;
+  $("signup-form").hidden = !signup;
+  $("login-card-title").textContent = signup ? "Create your Jija Studio account" : "Sign in to Jija Studio";
   sayLogin("");
+}
+$("auth-mode-signin").addEventListener("click", () => setAuthMode("signin"));
+$("auth-mode-signup").addEventListener("click", () => setAuthMode("signup"));
+
+$("signin-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = $("signin-button");
+  button.disabled = true;
+  sayLogin("Signing you in securely…");
+  try {
+    await accountApi().signIn($("signin-email").value, $("signin-password").value);
+    sayLogin("Signed in successfully.");
+  } catch (error) {
+    const code = String(error.code || "");
+    if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
+      sayLogin("Email or password is incorrect. Check your details or create an account.");
+    } else {
+      sayLogin(error.message || "Could not sign in. Please try again.");
+    }
+  } finally { button.disabled = false; }
 });
+
+$("signup-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = $("signup-button");
+  button.disabled = true;
+  sayLogin("Creating your account and saving your details…");
+  try {
+    const name = $("signup-name").value.trim();
+    const email = $("signup-email").value.trim();
+    const phone = normalizeIndianPhone($("signup-phone").value);
+    const password = $("signup-password").value;
+    const confirm = $("signup-password-confirm").value;
+    if (name.length < 2) throw new Error("Enter your full name.");
+    if (password.length < 6) throw new Error("Use a password with at least 6 characters.");
+    if (password !== confirm) throw new Error("The passwords do not match.");
+    const user = await accountApi().createAccount({ name, email, phone, password });
+    $("signup-password").value = "";
+    $("signup-password-confirm").value = "";
+    sayLogin("Account created. Your details have been saved.");
+    await loadProfile(user);
+  } catch (error) {
+    const code = String(error.code || "");
+    if (code.includes("email-already-in-use")) {
+      sayLogin("An account already uses that email. Choose Sign in or use Forgot password.");
+    } else if (code.includes("weak-password")) {
+      sayLogin("Choose a stronger password with at least 6 characters.");
+    } else {
+      sayLogin(error.message || "Could not create your account. Please check your details.");
+    }
+  } finally { button.disabled = false; }
+});
+
+$("forgot-password").addEventListener("click", async () => {
+  const email = $("signin-email").value.trim();
+  try {
+    await accountApi().resetPassword(email);
+    sayLogin("If this email is registered, a password-reset link has been sent. Check your inbox and spam folder. Need help? Call Jija Studio at +91 86007 61346.");
+  } catch (error) {
+    sayLogin((error.message || "Could not request a password reset.") + " For assistance, contact Jija Studio at +91 86007 61346.");
+  }
+});
+
 $("profile-form").addEventListener("submit", async event => {
   event.preventDefault();
   const button = $("save-profile");
@@ -175,10 +207,11 @@ $("profile-form").addEventListener("submit", async event => {
   try {
     const name = $("profile-name").value.trim();
     const email = $("profile-email").value.trim();
+    const phone = normalizeIndianPhone($("profile-phone").value);
     const address = $("profile-address").value.trim();
     const pin = $("profile-pin").value.trim();
-    const data = await accountApi().api("/api/customer/profile", { method: "POST", body: { name, email, address, pin } });
-    $("verified-phone").textContent = "Verified mobile number: " + (data.profile?.phone || auth.currentUser?.phoneNumber || "");
+    const data = await accountApi().api("/api/customer/profile", { method: "POST", body: { name, email, phone, address, pin } });
+    $("verified-phone").textContent = "Signed in as " + (auth.currentUser?.email || "") + " · " + (data.profile?.phone || auth.currentUser?.phoneNumber || phone);
     sayProfile("Profile saved successfully.");
     if (returnTo === "cart.html") {
       $("profile-status").textContent = "Profile saved. Taking you back to checkout…";
