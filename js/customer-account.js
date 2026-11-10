@@ -6,6 +6,9 @@ const accountApi = () => window.JijaCustomerAuth;
 let confirmationResult = null;
 let recaptchaVerifier = null;
 let loadedUid = "";
+let orderRefreshTimer = null;
+let orderLoadInProgress = false;
+const expandedTrackOrders = new Set();
 const params = new URLSearchParams(location.search);
 const returnTo = params.get("return") === "cart.html" ? "cart.html" : params.get("return") === "shop.html" ? "shop.html" : "";
 $("continue-shopping").href = returnTo || "shop.html";
@@ -65,25 +68,31 @@ function renderOrders(orders) {
       '<div class="account-order-top"><div><p class="eyebrow">YOUR JIJA STUDIO ORDER</p><h3>' + esc(order.orderNumber || "Order") + '</h3><p class="account-order-meta">' + (order.createdAt ? esc(new Date(order.createdAt).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})) : "Order date unavailable") + '</p></div><span class="account-order-badge">' + esc(statusLabels[status] || status) + '</span></div>' +
       '<ul class="account-order-items">' + items + '</ul>' +
       '<div class="account-order-top"><strong>Total: ' + money(order.total) + '</strong><button class="button button-outline" type="button" data-track-order="' + esc(order.id) + '">Track your order</button></div>' +
-      '<div class="account-track-panel" data-track-panel="' + esc(order.id) + '" hidden>' + orderTrackingMarkup(order) + '</div></article>';
+      '<div class="account-track-panel" data-track-panel="' + esc(order.id) + '"' + (expandedTrackOrders.has(String(order.id)) ? '' : ' hidden') + '>' + orderTrackingMarkup(order) + '</div></article>';
   }).join("");
   $("customer-orders").querySelectorAll("[data-track-order]").forEach(button => {
     button.addEventListener("click", () => {
       const panel = $("customer-orders").querySelector('[data-track-panel="' + CSS.escape(button.dataset.trackOrder) + '"]');
       if (!panel) return;
       panel.hidden = !panel.hidden;
+      if (panel.hidden) expandedTrackOrders.delete(String(button.dataset.trackOrder));
+      else expandedTrackOrders.add(String(button.dataset.trackOrder));
       button.textContent = panel.hidden ? "Track your order" : "Hide tracking";
     });
   });
 }
 async function loadOrders() {
-  $("orders-status").textContent = "Loading your orders…";
+  if (orderLoadInProgress || !auth.currentUser) return;
+  orderLoadInProgress = true;
   try {
+    $("orders-status").textContent = "Refreshing your orders…";
     const data = await accountApi().api("/api/customer/orders");
     renderOrders(data.orders || []);
-    $("orders-status").textContent = (data.orders || []).length + " order(s) in your account.";
+    $("orders-status").textContent = (data.orders || []).length + " order(s) in your account. Last checked " + new Date().toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"}) + ".";
   } catch (error) {
     $("orders-status").textContent = error.message || "Your orders could not be loaded.";
+  } finally {
+    orderLoadInProgress = false;
   }
 }
 async function loadProfile(user) {
@@ -109,7 +118,11 @@ async function loadProfile(user) {
 onAuthStateChanged(auth, user => {
   $("login-card").hidden = Boolean(user);
   $("account-panel").hidden = !user;
-  if (!user) { loadedUid = ""; return; }
+  if (orderRefreshTimer) { clearInterval(orderRefreshTimer); orderRefreshTimer = null; }
+  if (!user) { loadedUid = ""; expandedTrackOrders.clear(); return; }
+  orderRefreshTimer = setInterval(() => {
+    if (!document.hidden && auth.currentUser?.uid === user.uid) void loadOrders();
+  }, 30000);
   if (loadedUid === user.uid) return;
   loadedUid = user.uid;
   void loadProfile(user);
