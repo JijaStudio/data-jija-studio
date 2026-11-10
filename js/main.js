@@ -464,8 +464,20 @@ function setupContact() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize checkout independently first. A failure in an unrelated homepage,
+  // theme, wishlist, or Firebase-settings enhancement must not disable ordering.
   try {
-    applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupGlobalUI(); setupWishlistAndReviews(); setupHome(); setupShop(); setupProduct(); setupCart(); setupContact();
+    setupCart();
+  } catch (error) {
+    console.error('Jija Studio checkout initialization failed:', error);
+    const status = document.querySelector('#checkout-message');
+    if (status) {
+      status.hidden = false;
+      status.textContent = 'Checkout could not initialize. Please refresh the page and try again.';
+    }
+  }
+  try {
+    applyAdminCatalogueAndPaymentSettings(); applyAdminHomepageSettings(); setupGlobalUI(); setupWishlistAndReviews(); setupHome(); setupShop(); setupProduct(); setupContact();
     document.querySelectorAll('[data-check-pin]').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); const pin = form.querySelector('input').value.trim(); const output = form.querySelector('[data-pin-result]'); output.textContent = /^\d{6}$/.test(pin) ? 'PIN code format looks valid. Actual delivery availability must be confirmed by the store.' : 'Please enter a valid 6-digit Indian PIN code.'; }));
   } catch (error) {
     console.error('Jija Studio storefront initialisation failed:', error);
