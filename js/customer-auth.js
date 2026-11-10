@@ -1,63 +1,90 @@
-// Customer sign-in for Jija Studio: OTP verification runs through the Cloudflare Worker and MSG91.
+// Jija Studio customer authentication uses Firebase Email/Password Auth (no SMS OTP).
+import { auth, firebaseConfig } from "./firebase-config.js";
+import {
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  updateProfile,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
 const PAYMENT_BACKEND = "https://jija-studio-payments.jijastudio-payments-test.workers.dev";
-const SESSION_KEY = "jija_customer_session_v1";
-function readSession() {
-  try {
-    const value = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-    if (!value || !value.token || !value.user?.uid || !value.user?.phoneNumber || !Number.isFinite(value.expiresAt) || value.expiresAt <= Date.now()) {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-    return value;
-  } catch { return null; }
-}
-let session = readSession();
-const auth = { get currentUser() { return session?.user || null; } };
-const ready = Promise.resolve(auth.currentUser);
-function announceAuthChange() {
-  window.dispatchEvent(new CustomEvent("jija-auth-change", { detail: { user: auth.currentUser } }));
-}
-async function requestJson(path, body, authenticated = false) {
-  const headers = { "Accept": "application/json", "Content-Type": "application/json" };
-  if (authenticated) {
-    if (!session || session.expiresAt <= Date.now()) throw new Error("Please sign in to your Jija Studio account first.");
-    headers.Authorization = "Bearer " + session.token;
-  }
-  const response = await fetch(PAYMENT_BACKEND + path, { method: "POST", headers, body: JSON.stringify(body || {}), cache: "no-store" });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "The account service could not complete this request.");
-  return data;
-}
+let resolveInitialAuth;
+let initialStateSeen = false;
+const ready = new Promise(resolve => { resolveInitialAuth = resolve; });
+
 async function getHeaders() {
-  if (!session || session.expiresAt <= Date.now()) throw new Error("Your sign-in has expired. Please verify your mobile number again.");
-  return { "Authorization": "Bearer " + session.token };
+  await ready;
+  const user = auth.currentUser;
+  if (!user) throw new Error("Please sign in to your Jija Studio account first.");
+  const token = await user.getIdToken();
+  return {
+    "Authorization": "Bearer " + token,
+    "X-Firebase-Api-Key": firebaseConfig.apiKey
+  };
 }
+
 async function api(path, options = {}) {
   const method = options.method || "GET";
   const headers = { "Accept": "application/json", ...(await getHeaders()) };
   const request = { method, headers, cache: "no-store" };
-  if (options.body !== undefined) { headers["Content-Type"] = "application/json"; request.body = JSON.stringify(options.body); }
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    request.body = JSON.stringify(options.body);
+  }
   const response = await fetch(PAYMENT_BACKEND + path, request);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "The account service could not complete this request.");
   return data;
 }
-async function sendOtp(phone) { return requestJson("/api/auth/send-otp", { phone }); }
-async function verifyOtp(phone, otp) {
-  const data = await requestJson("/api/auth/verify-otp", { phone, otp });
-  if (!data.authenticated || !data.token || !data.user?.uid || !data.user?.phoneNumber || !data.expiresAt) throw new Error("The verification service returned an incomplete sign-in response.");
-  session = { token: data.token, expiresAt: Number(data.expiresAt), user: data.user };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  announceAuthChange();
-  return session.user;
+
+async function signIn(email, password) {
+  const result = await signInWithEmailAndPassword(auth, String(email || "").trim(), String(password || ""));
+  return result.user;
 }
+
+async function createAccount({ name, email, phone, password }) {
+  const result = await createUserWithEmailAndPassword(auth, String(email || "").trim(), String(password || ""));
+  if (name) await updateProfile(result.user, { displayName: String(name).trim() });
+  // Store the registration details immediately, so customers do not need to re-enter them.
+  await api("/api/customer/profile", {
+    method: "POST",
+    body: { name: String(name || "").trim(), email: String(email || "").trim(), phone: String(phone || "").trim(), address: "", pin: "" }
+  });
+  return result.user;
+}
+
+async function resetPassword(email) {
+  const normalized = String(email || "").trim();
+  if (!normalized) throw new Error("Enter the email address registered to your account first.");
+  await sendPasswordResetEmail(auth, normalized);
+}
+
 async function signOut() {
-  session = null;
-  localStorage.removeItem(SESSION_KEY);
-  announceAuthChange();
+  await firebaseSignOut(auth);
 }
-window.JijaCustomerAuth = { ready, auth, getUser: () => auth.currentUser, getHeaders, api, sendOtp, verifyOtp, signOut, backend: PAYMENT_BACKEND };
-queueMicrotask(announceAuthChange);
+
+window.JijaCustomerAuth = {
+  ready,
+  auth,
+  getUser: () => auth.currentUser,
+  getHeaders,
+  api,
+  signIn,
+  createAccount,
+  resetPassword,
+  signOut,
+  backend: PAYMENT_BACKEND
+};
+
+onAuthStateChanged(auth, user => {
+  if (!initialStateSeen) {
+    initialStateSeen = true;
+    resolveInitialAuth(user);
+  }
+  window.dispatchEvent(new CustomEvent("jija-auth-change", { detail: { user: user || null } }));
+});
 
 async function fillCheckoutProfile(user) {
   if (!user || !location.pathname.endsWith("cart.html")) return;
@@ -65,13 +92,20 @@ async function fillCheckoutProfile(user) {
     const data = await api("/api/customer/profile");
     const profile = data.profile;
     const mappings = [
-      ["customer-name", profile?.name || ""], ["customer-phone", user.phoneNumber || profile?.phone || ""],
-      ["customer-address", profile?.address || ""], ["customer-pin", profile?.pin || ""]
+      ["customer-name", profile?.name || user.displayName || ""],
+      ["customer-phone", profile?.phone || user.phoneNumber || ""],
+      ["customer-address", profile?.address || ""],
+      ["customer-pin", profile?.pin || ""]
     ];
-    mappings.forEach(([id, value]) => { const input = document.getElementById(id); if (input && !input.value && value) input.value = value; });
+    mappings.forEach(([id, value]) => {
+      const input = document.getElementById(id);
+      if (input && !input.value && value) input.value = value;
+    });
     const note = document.getElementById("razorpay-test-note");
-    if (note && !data.profile) note.textContent = "Finish your My Account profile before ordering. Your mobile number has been verified.";
-  } catch (error) { console.warn("Customer checkout profile could not be loaded.", error); }
+    if (note && !data.profile) note.textContent = "Finish your My Account profile before ordering.";
+  } catch (error) {
+    console.warn("Customer checkout profile could not be loaded.", error);
+  }
 }
 window.addEventListener("jija-auth-change", event => { void fillCheckoutProfile(event.detail?.user); });
 ready.then(user => fillCheckoutProfile(user));
