@@ -31,7 +31,15 @@
 .account-track-current{font-weight:700;color:#174d38;margin:0 0 8px}
 .account-order-meta{font-size:13px;color:var(--muted,#71695d)}
 .account-login-button{margin-top:14px}
-#recaptcha-container{margin:12px 0;min-height:1px}
+.auth-mode-tabs{display:flex;gap:8px;margin:16px 0 20px;border-bottom:1px solid #e7e0d5;padding-bottom:9px}
+.auth-mode-tab{border:1px solid #dcd6cb;border-radius:9px;padding:10px 15px;background:#fffefa;color:#174d38;font:inherit;font-weight:700;cursor:pointer}
+.auth-mode-tab[aria-pressed="true"]{background:#174d38;border-color:#174d38;color:#fff}
+#signin-form .form-group{margin-bottom:14px}
+#signin-form .account-login-button{margin-right:8px}
+#signup-form .account-form-grid{margin-bottom:14px}
+#signup-form .account-form-grid .form-group{margin-bottom:4px}
+.account-note a{color:#174d38;font-weight:700}
+
 @media(max-width:620px){.account-shell{margin-top:20px}.account-banner,.account-card{padding:18px}.account-form-grid{grid-template-columns:1fr}.account-form-grid .wide{grid-column:auto}}
 </style>
 </head>
@@ -44,22 +52,33 @@
 </div></header>
 <main class="account-shell">
 <div class="breadcrumbs"><a href="index.html">Home</a> / My Account</div>
-<section class="account-banner"><p class="eyebrow">YOUR JIJA STUDIO ACCOUNT</p><h1>Your profile & orders</h1><p>Sign in with your mobile number to manage your profile and favourites, view your order history, and track delivery progress from inside your account.</p></section>
+<section class="account-banner"><p class="eyebrow">YOUR JIJA STUDIO ACCOUNT</p><h1>Your profile & orders</h1><p>Sign in with your email and password, or create an account to save your contact and delivery details, view your order history, and track your orders.</p></section>
 
 <section id="login-card" class="account-card">
-<h2>Sign in with your mobile number</h2>
-<p class="account-note">We’ll send you a one-time verification code by SMS. Your verified number helps keep your orders private.</p>
-<form id="phone-form">
-<div class="form-group"><label for="phone-input">Mobile number *</label><input class="account-input" id="phone-input" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210" required></div>
-<div id="recaptcha-container" hidden></div>
-<button class="button button-primary account-login-button" id="send-otp" type="submit">Send verification code</button>
+<h2 id="login-card-title">Sign in to Jija Studio</h2>
+<p class="account-note">Use your email and password to access your account. No SMS verification code is needed.</p>
+<div class="auth-mode-tabs" role="group" aria-label="Account access options">
+  <button class="auth-mode-tab" id="auth-mode-signin" type="button" aria-pressed="true">Sign in</button>
+  <button class="auth-mode-tab" id="auth-mode-signup" type="button" aria-pressed="false">Create account</button>
+</div>
+<form id="signin-form">
+  <div class="form-group"><label for="signin-email">Email address *</label><input class="account-input" id="signin-email" type="email" autocomplete="email" required maxlength="160" placeholder="you@example.com"></div>
+  <div class="form-group"><label for="signin-password">Password *</label><input class="account-input" id="signin-password" type="password" autocomplete="current-password" required minlength="6" placeholder="Your password"></div>
+  <button class="button button-primary account-login-button" id="signin-button" type="submit">Sign in</button>
+  <button class="button button-outline account-login-button" id="forgot-password" type="button">Forgot password?</button>
 </form>
-<form id="otp-form" hidden>
-<div class="form-group"><label for="otp-input">6-digit verification code *</label><input class="account-input" id="otp-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter SMS code" required></div>
-<button class="button button-primary account-login-button" id="verify-otp" type="submit">Verify and sign in</button>
-<button class="button button-outline" id="change-number" type="button">Change number</button>
+<form id="signup-form" hidden>
+  <div class="account-form-grid">
+    <div class="form-group"><label for="signup-name">Full name *</label><input class="account-input" id="signup-name" autocomplete="name" required maxlength="100" placeholder="Your full name"></div>
+    <div class="form-group"><label for="signup-email">Email address *</label><input class="account-input" id="signup-email" type="email" autocomplete="email" required maxlength="160" placeholder="you@example.com"></div>
+    <div class="form-group"><label for="signup-phone">Mobile number *</label><input class="account-input" id="signup-phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+91 98765 43210"></div>
+    <div class="form-group"><label for="signup-password">Create password *</label><input class="account-input" id="signup-password" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters"></div>
+    <div class="form-group wide"><label for="signup-password-confirm">Confirm password *</label><input class="account-input" id="signup-password-confirm" type="password" autocomplete="new-password" required minlength="6" placeholder="Enter the same password again"></div>
+  </div>
+  <button class="button button-primary account-login-button" id="signup-button" type="submit">Create account and save details</button>
 </form>
 <p id="login-status" class="account-status" role="status" aria-live="polite"></p>
+<p class="account-note">Forgot your password? Use “Forgot password?” above to request an email reset link. If you need personal assistance, contact our help line at <a href="tel:+918600761346">+91 86007 61346</a>.</p>
 </section>
 
 <section id="account-panel" hidden>
@@ -68,7 +87,8 @@
 <form id="profile-form">
 <div class="account-form-grid">
 <div class="form-group"><label for="profile-name">Full name *</label><input class="account-input" id="profile-name" name="name" autocomplete="name" required maxlength="100" placeholder="Your full name"></div>
-<div class="form-group"><label for="profile-email">Email (optional)</label><input class="account-input" id="profile-email" name="email" type="email" autocomplete="email" maxlength="160" placeholder="you@example.com"></div>
+<div class="form-group"><label for="profile-email">Email address *</label><input class="account-input" id="profile-email" name="email" type="email" autocomplete="email" maxlength="160" required placeholder="you@example.com"></div>
+<div class="form-group"><label for="profile-phone">Mobile number *</label><input class="account-input" id="profile-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+91 98765 43210"></div>
 <div class="form-group wide"><label for="profile-address">Default delivery address</label><textarea class="account-input" id="profile-address" name="address" autocomplete="street-address" rows="3" maxlength="600" placeholder="House, street, area, city, state"></textarea></div>
 <div class="form-group"><label for="profile-pin">Default PIN code</label><input class="account-input" id="profile-pin" name="pin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit PIN code"></div>
 </div>
@@ -84,6 +104,6 @@
 </main>
 <footer class="site-footer"><div class="container footer-bottom"><span>© <span data-year></span> Jija Studio. All rights reserved.</span><span><a href="contact.html">Contact us</a> · <a href="index.html#wishlist-section">Your favourites</a></span></div></footer>
 <script src="js/products.js"></script><script src="js/main.js?v=live-mode-ready-1"></script>
-<script type="module" src="js/customer-auth.js?v=cloudflare-otp-1"></script>
-<script type="module" src="js/customer-account.js?v=cloudflare-otp-1"></script>
+<script type="module" src="js/customer-auth.js?v=email-password-1"></script>
+<script type="module" src="js/customer-account.js?v=email-password-1"></script>
 </body></html>
