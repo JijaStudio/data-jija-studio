@@ -3,10 +3,10 @@
 // IMPORTANT: replace these placeholders before launch. Use country code, digits only.
 const STORE_CONFIG = {
   storeName: 'Jija Studio',
-  whatsappNumber: '919673960373', // Jija Studio WhatsApp number
-  phoneDisplay: '+91 96739 60373',
+  whatsappNumber: '918600761346', // Sharvari Jadhav — Jija Studio WhatsApp orders
+  phoneDisplay: '+91 86007 61346',
   upiId: 'yourname@upi', // PLACEHOLDER: replace with your verified UPI ID
-  upiName: 'Jija Studio',
+  upiName: 'Sharvari Jadhav',
   currency: 'INR'
 };
 
@@ -34,15 +34,10 @@ function applyAdminCatalogueAndPaymentSettings() {
   let settings = window.jijaFirebaseSettings && typeof window.jijaFirebaseSettings === 'object' ? window.jijaFirebaseSettings : null;
   if (!Array.isArray(savedProducts)) { try { savedProducts = JSON.parse(localStorage.getItem('jijaAdminProducts') || 'null'); } catch {} }
   if (!settings) { try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch { settings = {}; } }
-  if (settings.upiId && /^[^\\s@]+@[^\\s@]+$/.test(settings.upiId)) STORE_CONFIG.upiId = settings.upiId;
-  if (settings.upiName) STORE_CONFIG.upiName = settings.upiName;
-  STORE_CONFIG.paymentSettings = settings.paymentSettings || { razorpayEnabled: true, upiEnabled: false };
+  // WhatsApp-first checkout: the store shares payment instructions directly with customers.
   const paymentBanner = document.querySelector('#payment-methods-banner');
   if (paymentBanner) {
-    const methods = [];
-    if (STORE_CONFIG.paymentSettings.razorpayEnabled !== false) methods.push('Secure online payment');
-    if (STORE_CONFIG.paymentSettings.upiEnabled === true && settings.upiId) methods.push('UPI transfer');
-    paymentBanner.textContent = methods.length ? 'Payment options: ' + methods.join(' · ') + ' — available at checkout.' : 'Please contact Jija Studio to confirm available payment methods.';
+    paymentBanner.textContent = 'WhatsApp orders and direct payment instructions from Sharvari Jadhav.';
   }
   if (Array.isArray(savedProducts)) {
     const deleted = new Set(savedProducts.filter(p => p && p._deleted).map(p => String(p.id)));
@@ -128,10 +123,7 @@ function applyAdminHomepageSettings() {
   if (offerBanner) offerBanner.innerHTML = '<span class="shipping-offer-icon">🚚</span><span><strong>Free delivery on orders above ' + money(threshold) + '</strong><small>Orders below ' + money(threshold) + ' have a flat ' + money(shippingFee) + ' delivery charge.</small></span>';
   const announcement = document.querySelector('[data-admin-announcement]');
   if (announcement && settings.announcement) announcement.textContent = settings.announcement;
-  if (settings.whatsappNumber && /^\d{10}$/.test(settings.whatsappNumber)) {
-    STORE_CONFIG.whatsappNumber = '91' + settings.whatsappNumber;
-    STORE_CONFIG.phoneDisplay = '+91 ' + settings.whatsappNumber.slice(0, 5) + ' ' + settings.whatsappNumber.slice(5);
-  }
+  // Use one official WhatsApp number for every category and every product.
   const hero = document.querySelector('.hero');
   if (hero && settings.heroTitle) {
     const h = hero.querySelector('h1');
@@ -347,7 +339,7 @@ function readWishlist(){try{return JSON.parse(localStorage.getItem(WISHLIST_KEY)
 function toggleWishlist(id){const ids=readWishlist();const next=ids.includes(String(id))?ids.filter(x=>x!==String(id)):[...ids,String(id)];try{localStorage.setItem(WISHLIST_KEY,JSON.stringify(next));}catch(error){showToast('Wishlist could not be saved in this browser.');console.warn('Wishlist could not be saved.',error);return;}updateCartCount();showToast(next.includes(String(id))?'Added to your wishlist':'Removed from your wishlist');}
 function renderWishlist(){const root=document.querySelector('#wishlist-products');if(!root)return;const ids=readWishlist();const items=ids.map(id=>findProduct(id)).filter(Boolean);if(!items.length){root.innerHTML='<p class="empty-state">Your wishlist is empty. Tap the heart on a product to save it here.</p>';return;}renderProducts(root,items);}
 function renderHomepageReviews(){const root=document.querySelector('#homepage-reviews');if(!root)return;let settings={};try{settings=JSON.parse(localStorage.getItem('jijaAdminSettings')||'{}')||{};}catch{}const reviews=Array.isArray(settings.reviews)?settings.reviews:[];root.innerHTML=reviews.length?reviews.map(r=>'<article class="review-card"><div class="review-stars" aria-label="'+Math.max(1,Math.min(5,Number(r.rating)||5))+' out of 5 stars">'+('★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5))))+('☆'.repeat(5-Math.max(1,Math.min(5,Number(r.rating)||5))))+'</div><h3>'+escapeHTML(r.name||'Customer')+'</h3><p>'+escapeHTML(r.text||'')+'</p></article>').join(''):'<p>No reviews published yet. We welcome your feedback!</p>';}
-function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'919673960373';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
+function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'918600761346';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
 
 function setupHome() {
   setupHomepageAnimations();
@@ -410,7 +402,7 @@ function setupProduct() {
   ${product.sizes.length > 1 || product.sizes[0] !== 'One Size' ? `<label class="field-label" for="product-size">Choose size</label><select id="product-size" class="form-control">${product.sizes.map(s=>{const tracked=!!trackedStock(product);const qty=tracked?availableForCart(product,s):null;return `<option value="${escapeHTML(s)}" ${tracked&&qty<=0?'disabled':''}>${escapeHTML(s)}</option>`;}).join('')}</select>` : ''}
   <label class="field-label" for="product-colour">Colour</label><select id="product-colour" class="form-control">${product.colours.map(c=>`<option>${escapeHTML(c)}</option>`).join('')}</select>
   <div class="detail-actions"><button class="button button-primary" id="detail-add">Add to bag</button><a class="button button-outline" target="_blank" rel="noopener" href="${whatsappLink(`Hello Jija Studio, I am interested in ${product.name} (Product ID: ${product.id}). Please share details.`)}">Ask on WhatsApp</a></div>
-  <div class="product-assurance"><p>🚚 <strong>Estimated delivery:</strong> ${escapeHTML(product.deliveryTime || '3–5 days')}</p><p>↩ <strong>Returns:</strong> ${product.returnPolicy==='returnable'?'Returnable':product.returnPolicy==='exchange-only'?'Exchange only':'Non-returnable'}</p><p>💳 <strong>Payment:</strong> ${product.paymentPolicy==='online-cod'?'Online payment or Cash on Delivery':product.paymentPolicy==='cod-only'?'Cash on Delivery only':'Online payment only'}</p><p>♡ Need help? Our team can assist on WhatsApp</p></div></div>`;
+  <div class="product-assurance"><p>🚚 <strong>Estimated delivery:</strong> ${escapeHTML(product.deliveryTime || '3–5 days')}</p><p>↩ <strong>Returns:</strong> ${product.returnPolicy==='returnable'?'Returnable':product.returnPolicy==='exchange-only'?'Exchange only':'Non-returnable'}</p><p>💳 <strong>Payment:</strong> ${product.paymentPolicy==='cod-only'?'Cash on Delivery by arrangement':'Direct payment arranged on WhatsApp'}</p><p>♡ Need help? Our team can assist on WhatsApp</p></div></div>`;
   const addButton=document.querySelector('#detail-add');const sizeSelect=document.querySelector('#product-size');const stockNote=document.querySelector('#detail-stock-note');const trackedSizes=!!trackedStock(product);if(!sizeSelect&&trackedSizes&&availableForCart(product,'One Size')<=0){addButton.disabled=true;addButton.textContent='Out of stock';}if(sizeSelect&&trackedSizes){const refreshAvailability=()=>{const size=sizeSelect.value;const qty=availableForCart(product,size);const opt=sizeSelect.selectedOptions[0];if(stockNote)stockNote.textContent=qty>0?qty+(isSareeProduct(product)?(qty===1?' saree available':' sarees available'):(qty===1?' item available':' items available'))+' in this size':'Out of stock';addButton.disabled=!opt||opt.disabled;addButton.textContent=addButton.disabled?'Out of stock':'Add to bag';};if(sizeSelect.options.length&&sizeSelect.selectedOptions[0]?.disabled){const available=[...sizeSelect.options].find(o=>!o.disabled);if(available)sizeSelect.value=available.value;}sizeSelect.addEventListener('change',refreshAvailability);refreshAvailability();}addButton.addEventListener('click', () => addToCart(product.id, 1, sizeSelect?.value || 'One Size', document.querySelector('#product-colour')?.value || ''));
   root.querySelectorAll('[data-gallery-image]').forEach(button => button.addEventListener('click', () => { const idx=Number(button.dataset.galleryImage); const main=root.querySelector('#detail-main-image'); if(main&&galleryImages[idx]) main.src=galleryImages[idx]; root.querySelectorAll('[data-gallery-image]').forEach(b=>b.classList.toggle('active',b===button)); }));
   renderProducts(document.querySelector('#related-products'), products.filter(p => p.category === product.category && p.id !== product.id).slice(0,4));
@@ -433,8 +425,7 @@ function setupCart() {
     root.querySelectorAll('[data-qty]').forEach(btn => { const cartNow=getCart(); const item=cartNow.find(i=>i.key===btn.dataset.qty); const p=item&&findProduct(item.id); const available=item&&p?availableForCart(p,item.size):Infinity; if(item&&Number(btn.dataset.delta)>0&&available!==Infinity&&cartQuantityForSize(cartNow,item.id,item.size)>=available) {btn.disabled=true;btn.title='Maximum available stock reached';} btn.addEventListener('click',()=>{const latest=getCart();const target=latest.find(i=>i.key===btn.dataset.qty);if(!target)return;const product=findProduct(target.id);const delta=Number(btn.dataset.delta);if(delta>0){const limit=availableForCart(product,target.size);if(limit!==Infinity&&cartQuantityForSize(latest,target.id,target.size)+delta>limit){showToast('Only '+limit+' item'+(limit===1?'':'s')+' available in size '+target.size);return;}}target.quantity+=delta;saveCart(latest.filter(i=>i.quantity>0));draw();}); });
   }
   draw();
-  const upi = document.querySelector('#upi-id'); if (upi) upi.textContent = STORE_CONFIG.upiId;
-  const copy = document.querySelector('#copy-upi'); copy?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(STORE_CONFIG.upiId); showToast('UPI ID copied'); } catch { showToast('Please copy the UPI ID shown above'); } });
+
   const form = document.querySelector('#checkout-form');
   form?.addEventListener('submit', event => {
     event.preventDefault(); const cart = getCart(); if (!cart.length) { showToast('Your bag is empty'); return; }
@@ -443,7 +434,7 @@ function setupCart() {
     if (!name || !phone || !address || !pin) { showToast('Please complete all delivery details'); return; }
     const lines = cart.map(item => { const p = findProduct(item.id); return `• ${p.name} (${item.size || 'One Size'}${item.colour ? ', '+item.colour : ''}) × ${item.quantity} — ${money((p.salePrice || p.price) * item.quantity)}`; });
     const subtotal = cart.reduce((sum,item) => sum + (findProduct(item.id).salePrice || findProduct(item.id).price) * item.quantity,0); const shipping=subtotal>=freeThreshold?0:flatShippingFee; const total=subtotal+shipping;
-    const message = `Hello Jija Studio! I'd like to place an order.\n\nORDER ITEMS\n${lines.join('\n')}\n\nSubtotal: ${money(subtotal)}\nDelivery: ${shipping===0?'FREE':money(shipping)}\nTotal including delivery: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability, shipping charges and payment instructions. I understand this message is an order request, not a confirmed payment.`;
+    const message = `Hello Jija Studio! I'd like to place an order.\n\nORDER ITEMS\n${lines.join('\n')}\n\nSubtotal: ${money(subtotal)}\nDelivery: ${shipping===0?'FREE':money(shipping)}\nTotal including delivery: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability and shipping charges, then share payment instructions on WhatsApp. This is an order request, not a confirmed payment.`;
     window.open(whatsappLink(message), '_blank', 'noopener,noreferrer');
     const status = document.querySelector('#checkout-message'); if(status) { status.hidden = false; status.textContent = 'WhatsApp opened with your order request. Send the message to the store and wait for confirmation. Your cart has not been cleared.'; }
   });
