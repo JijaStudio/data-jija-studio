@@ -67,7 +67,10 @@ async function loadOrders() {
       const items = Array.isArray(order.items) ? order.items : [];
       const statusLabels = {pending_confirmation:"Awaiting store confirmation",confirmed:"Confirmed", processing:"Processing", packed:"Packed", shipped:"Shipped / in transit", delivered:"Delivered", cancelled:"Cancelled"};
       const paymentStatusLabels = {paid:"Paid",whatsapp_requested:"WhatsApp order request",created:"Payment pending",pending:"Payment pending"};
-      const statusChoices = ["confirmed","processing","packed","shipped","delivered","cancelled"]
+      const selectableStatuses = order.orderStatus === "pending_confirmation"
+        ? ["pending_confirmation","confirmed","processing","packed","shipped","delivered","cancelled"]
+        : ["confirmed","processing","packed","shipped","delivered","cancelled"];
+      const statusChoices = selectableStatuses
         .map(status => '<option value="' + status + '" ' + (order.orderStatus === status ? "selected" : "") + '>' + statusLabels[status] + '</option>').join("");
       const paid = order.paymentStatus === "paid";
       const whatsappRequest = order.paymentStatus === "whatsapp_requested";
