@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-IN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orders | Jija Studio Admin</title><link rel="stylesheet" href="css/style.css"><style>.orders-shell{max-width:1100px;margin:35px auto;padding:0 16px}.orders-login,.order-card{background:#fff;border:1px solid #e4dfd5;border-radius:14px;padding:18px;margin:12px 0}.orders-login{max-width:460px;margin:60px auto}.orders-login input,.order-card select{width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;margin:6px 0 12px}.order-card h3{margin:0 0 8px}.order-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.muted{color:#71695d}.orders-status{min-height:24px;color:#174d38}.order-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.order-items{padding-left:20px}@media print{button,select,.orders-login{display:none}}</style></head>
+<html lang="en-IN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orders | Jija Studio Admin</title><link rel="stylesheet" href="css/style.css"><style>.orders-shell{max-width:1100px;margin:35px auto;padding:0 16px}.orders-login,.order-card{background:#fff;border:1px solid #e4dfd5;border-radius:14px;padding:18px;margin:12px 0}.orders-login{max-width:460px;margin:60px auto}.orders-login input,.order-card select{width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;margin:6px 0 12px}.order-card h3{margin:0 0 8px}.order-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.muted{color:#71695d}.orders-status{min-height:24px;color:#174d38}.order-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.order-items{padding-left:20px}.delete-order{border-color:#a33a32;color:#a33a32}.delete-order:hover{background:#fff5f4}@media print{button,select,.orders-login{display:none}}</style></head>
 <body><header class="site-header"><div class="container header-inner"><a class="brand" href="index.html"><span class="brand-name">Jija Studio</span><span class="brand-tagline">Admin · Orders</span></a><nav class="main-nav"><a href="admin.html">Product Admin</a><a href="index.html">Storefront</a></nav></div></header>
 <main class="orders-shell"><h1>Customer orders</h1><p class="muted">Sign in with the authorized store admin account. Customer details and checkout orders are loaded from the secure payment order service.</p>
 <form id="login" class="orders-login"><h2>Admin sign in</h2><label>Email<input id="email" type="email" required autocomplete="username"></label><label>Password<input id="password" type="password" required autocomplete="current-password"></label><button class="button button-primary" type="submit">Sign in</button><p id="login-status" class="orders-status" role="status"></p></form>
@@ -70,8 +70,9 @@ async function loadOrders() {
         .map(status => '<option value="' + status + '" ' + (order.orderStatus === status ? "selected" : "") + '>' + statusLabels[status] + '</option>').join("");
       const paid = order.paymentStatus === "paid";
       const statusTools = paid
-        ? '<label>Fulfilment status <select data-order-status="' + esc(order.id) + '">' + statusChoices + '</select></label><button class="button button-outline" data-save-order="' + esc(order.id) + '">Save status</button>'
-        : '<p class="muted">Fulfilment status can be updated after payment is confirmed.</p>';
+        ? '<label>Fulfilment status <select data-order-status="' + esc(order.id) + '">' + statusChoices + '</select></label><button class="button button-outline" data-save-order="' + esc(order.id) + '">Save status</button><p class="muted">Paid order records are retained for payment and refund history. Mark unavailable orders as Cancelled instead of deleting them.</p>'
+        : '<p class="muted">This order has no recorded successful payment and can be deleted if it is no longer needed.</p>';
+      const deleteTool = !paid ? '<button class="button button-outline delete-order" data-delete-order="' + esc(order.id) + '">Delete unpaid order</button>' : '';
       const customerPhone = String(customer.phone || "").replace(/[^0-9]/g, "");
       const whatsapp = customerPhone
         ? '<a target="_blank" rel="noopener" href="https://wa.me/' + esc(customerPhone) + '?text=' + encodeURIComponent("Hello " + (customer.name || "") + " — Jija Studio order " + (order.orderNumber || order.id) + ".") + '">WhatsApp customer</a>'
@@ -83,7 +84,7 @@ async function loadOrders() {
         '</div><div><strong>Delivery address</strong><br>' + esc(customer.address || "Not provided") + '<br>PIN ' + esc(customer.pin || "—") +
         '</div><div><strong>Payment</strong><br>' + money(order.total) + ' · ' + esc(order.razorpayPaymentId || "Not captured") +
         '<br><span class="muted">Created ' + new Date(order.createdAt || Date.now()).toLocaleString("en-IN") + '</span></div></div>' +
-        '<ul class="order-items">' + itemHtml + '</ul>' + statusTools +
+        '<ul class="order-items">' + itemHtml + '</ul>' + statusTools + deleteTool +
         '<p class="muted">Automatic WhatsApp alert: ' + esc(notifyStatus) + '</p>' + (paid ? '<button class="button button-outline" data-notify-order="' + esc(order.id) + '">Send WhatsApp alert / retry</button>' : '') + '</article>';
     }).join("") || '<p>No checkout orders yet.</p>';
     $("orders-list").querySelectorAll("[data-save-order]").forEach(button => {
@@ -99,6 +100,22 @@ async function loadOrders() {
         } catch (error) {
           $("orders-status").textContent = "Could not save status: " + error.message;
         } finally {
+          button.disabled = false;
+        }
+      });
+    });
+    $("orders-list").querySelectorAll("[data-delete-order]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const id = button.dataset.deleteOrder;
+        if (!window.confirm("Delete this unpaid order permanently? Paid orders cannot be deleted, and any order with a payment reference must be kept for recordkeeping.")) return;
+        button.disabled = true;
+        $("orders-status").textContent = "Deleting unpaid order…";
+        try {
+          await api("/api/admin/delete-order", {id});
+          await loadOrders();
+          $("orders-status").textContent = "Unpaid order deleted successfully.";
+        } catch (error) {
+          $("orders-status").textContent = "Could not delete order: " + error.message;
           button.disabled = false;
         }
       });
