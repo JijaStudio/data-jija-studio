@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Account | Jija Studio</title>
+<meta name="description" content="Sign in to your Jija Studio account to manage your profile and track your orders.">
+<meta name="theme-color" content="#174d38">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.account-shell{max-width:980px;margin:36px auto;padding:0 16px 56px}
+.account-banner{background:#f5f3ec;border-radius:18px;padding:28px;margin:24px 0}
+.account-banner h1{font:600 clamp(28px,4vw,40px)/1.15 var(--serif);color:#174d38;margin:6px 0 10px}
+.account-card{background:var(--white,#fffefa);border:1px solid #e7e0d5;border-radius:16px;padding:22px;margin:16px 0}
+.account-card h2{font:600 24px var(--serif);color:#174d38;margin:0 0 12px}
+.account-note{color:var(--muted,#71695d);font-size:14px}
+.account-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.account-form-grid .form-group{margin:0}
+.account-form-grid .wide{grid-column:1/-1}
+.account-input{width:100%;padding:12px 13px;border:1px solid #dcd6cb;border-radius:9px;font:inherit;background:#fff}
+.account-status{min-height:24px;margin:12px 0 0;color:#174d38;font-weight:600}
+.account-order{border:1px solid #e4dfd5;border-radius:14px;padding:18px;margin:14px 0;background:#fff}
+.account-order-top{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.account-order h3{margin:0;color:#174d38;font-size:19px}
+.account-order-badge{display:inline-flex;border-radius:999px;background:#e7eee8;color:#174d38;padding:6px 10px;font-size:12px;font-weight:700}
+.account-order-items{padding-left:20px;margin:14px 0}
+.account-order-items li{margin:5px 0}
+.account-track-panel{margin-top:14px;padding:15px;background:#f8f7f2;border-radius:11px}
+.account-track-panel[hidden]{display:none}
+.account-track-current{font-weight:700;color:#174d38;margin:0 0 8px}
+.account-order-meta{font-size:13px;color:var(--muted,#71695d)}
+.account-login-button{margin-top:14px}
+#recaptcha-container{margin:12px 0;min-height:1px}
+@media(max-width:620px){.account-shell{margin-top:20px}.account-banner,.account-card{padding:18px}.account-form-grid{grid-template-columns:1fr}.account-form-grid .wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="announcement">A little tradition, a lot of style · Discover your next favourite look</div>
+<header class="site-header"><div class="container header-inner">
+<a class="brand" href="index.html"><img class="brand-logo" src="https://d2ol7oe51mr4n9.cloudfront.net/user_3K9B8QWO8ldsXECgkrcRH2T3svS/c8225bf7-f76c-467c-a11c-284b88b92c7b.png" alt="Jija Studio floral logo"><span><span class="brand-name">Jija Studio</span><span class="brand-tagline">Timeless Indian style</span></span></a>
+<nav class="main-nav" aria-label="Main navigation"><a href="index.html">Home</a><a href="shop.html">Shop all</a><a href="index.html#wishlist-section">Your favourites</a><a aria-current="page" href="account.html">My Account</a><a href="cart.html">Shopping bag</a></nav>
+<div class="header-actions"><a class="icon-link" href="cart.html" aria-label="Shopping bag">Bag</a><button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false">☰</button></div>
+</div></header>
+<main class="account-shell">
+<div class="breadcrumbs"><a href="index.html">Home</a> / My Account</div>
+<section class="account-banner"><p class="eyebrow">YOUR JIJA STUDIO ORDER</p><h1>Track your order</h1><p>Sign in with your mobile number to see your order history, delivery progress, and saved account details in one place.</p></section>
+
+<section id="login-card" class="account-card">
+<h2>Sign in with your mobile number</h2>
+<p class="account-note">We’ll send you a one-time verification code by SMS. Your verified number helps keep your orders private.</p>
+<form id="phone-form">
+<div class="form-group"><label for="phone-input">Mobile number *</label><input class="account-input" id="phone-input" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210" required></div>
+<div id="recaptcha-container"></div>
+<button class="button button-primary account-login-button" id="send-otp" type="submit">Send verification code</button>
+</form>
+<form id="otp-form" hidden>
+<div class="form-group"><label for="otp-input">6-digit verification code *</label><input class="account-input" id="otp-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter SMS code" required></div>
+<button class="button button-primary account-login-button" id="verify-otp" type="submit">Verify and sign in</button>
+<button class="button button-outline" id="change-number" type="button">Change number</button>
+</form>
+<p id="login-status" class="account-status" role="status" aria-live="polite"></p>
+</section>
+
+<section id="account-panel" hidden>
+<section class="account-card">
+<div class="account-order-top"><div><p class="eyebrow">YOUR PROFILE</p><h2>My Account</h2><p id="verified-phone" class="account-note"></p></div><button class="button button-outline" id="sign-out" type="button">Sign out</button></div>
+<form id="profile-form">
+<div class="account-form-grid">
+<div class="form-group"><label for="profile-name">Full name *</label><input class="account-input" id="profile-name" name="name" autocomplete="name" required maxlength="100" placeholder="Your full name"></div>
+<div class="form-group"><label for="profile-email">Email (optional)</label><input class="account-input" id="profile-email" name="email" type="email" autocomplete="email" maxlength="160" placeholder="you@example.com"></div>
+<div class="form-group wide"><label for="profile-address">Default delivery address</label><textarea class="account-input" id="profile-address" name="address" autocomplete="street-address" rows="3" maxlength="600" placeholder="House, street, area, city, state"></textarea></div>
+<div class="form-group"><label for="profile-pin">Default PIN code</label><input class="account-input" id="profile-pin" name="pin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit PIN code"></div>
+</div>
+<div class="order-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="button button-primary" id="save-profile" type="submit">Save profile</button><a id="continue-shopping" class="button button-outline" href="shop.html">Continue shopping</a></div>
+<p id="profile-status" class="account-status" role="status" aria-live="polite"></p>
+</form>
+</section>
+<section class="account-card" id="orders-section">
+<div class="account-order-top"><div><p class="eyebrow">YOUR JIJA STUDIO ORDER</p><h2>Order history</h2><p class="account-note">Use “Track your order” on any order to see its latest status.</p></div><button id="refresh-orders" type="button" class="button button-outline">Refresh orders</button></div>
+<p id="orders-status" class="account-status" role="status" aria-live="polite"></p><div id="customer-orders"></div>
+</section>
+</section>
+</main>
+<footer class="site-footer"><div class="container footer-bottom"><span>© <span data-year></span> Jija Studio. All rights reserved.</span><span><a href="contact.html">Contact us</a> · <a href="index.html#wishlist-section">Your favourites</a></span></div></footer>
+<script src="js/main.js?v=account-orders-1"></script>
+<script type="module" src="js/customer-auth.js"></script>
+<script type="module" src="js/customer-account.js"></script>
+</body></html>
