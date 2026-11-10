@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en-IN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Order confirmation | Jija Studio</title><link rel="stylesheet" href="css/style.css"><style>.confirmation{max-width:680px;margin:60px auto;padding:28px 20px;text-align:center}.confirmation-card{background:#fff;border:1px solid #e5dfd3;border-radius:18px;padding:32px;box-shadow:0 12px 35px #0000000b}.confirmation h1{color:#174d38}.confirmation .check{font-size:44px;color:#174d38}.order-ref{font-weight:700;overflow-wrap:anywhere}</style></head>
 <body><header class="site-header"><div class="container header-inner"><a class="brand" href="index.html"><span class="brand-name">Jija Studio</span><span class="brand-tagline">Timeless Indian style</span></a><nav class="main-nav"><a href="index.html">Home</a><a href="shop.html">Shop all</a></nav></div></header>
-<main class="confirmation"><div class="confirmation-card"><div class="check" aria-hidden="true">✓</div><p class="eyebrow">Thank you for shopping with us</p><h1>Payment successful</h1><p>Your payment has been verified and your order is confirmed.</p><p>Order number: <span id="order-number" class="order-ref">Loading…</span></p><p id="order-note" class="small-note">Keep your order number for reference. Jija Studio will send an update using the contact details provided at checkout.</p><a class="button button-primary" href="shop.html">Continue shopping</a><p><a href="index.html?trackOrder=1">Track your order on the homepage</a></p><p><a href="index.html">Return to homepage</a></p></div></main>
+<main class="confirmation"><div class="confirmation-card"><div class="check" aria-hidden="true">✓</div><p class="eyebrow">Thank you for shopping with us</p><h1>Payment successful</h1><p>Your payment has been verified and your order is confirmed.</p><p>Order number: <span id="order-number" class="order-ref">Loading…</span></p><p id="order-note" class="small-note">Keep your order number for reference. Jija Studio will send an update using the contact details provided at checkout.</p><a class="button button-primary" href="shop.html">Continue shopping</a><p><a href="account.html?orders=1">View your orders in My Account</a></p><p><a href="index.html">Return to homepage</a></p></div></main>
 <script>
 (async function(){
   const params=new URLSearchParams(location.search);
@@ -35,7 +35,7 @@
   if(id){
     number.textContent=id;
     heading.textContent="Your order reference";
-    note.textContent="For privacy, live tracking uses the private tracking link created at checkout. Open the homepage on the device used to place this order to see saved updates.";
+    note.textContent="For privacy, live tracking uses the private tracking link created at checkout. Sign in to My Account to view the orders linked to your verified mobile number.";
     return;
   }
   heading.textContent="Order reference missing";
