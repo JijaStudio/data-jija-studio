@@ -466,24 +466,31 @@ function setupCart() {
   const paymentNote = document.querySelector('#razorpay-test-note');
   const paymentBackend = PAYMENT_BACKEND;
   let testCheckoutConfigured = false;
+  let checkoutMode = 'test';
   if (paymentButton) {
     paymentButton.disabled = true;
     fetch(paymentBackend + '/health', { headers: { 'Accept': 'application/json' } })
       .then(response => response.json())
       .then(health => {
-        testCheckoutConfigured = health.paymentConfigured === true && health.orderStorageConfigured === true && health.firebaseCatalogueReadable === true;
+        checkoutMode = health.mode === 'live' ? 'live' : 'test';
+        testCheckoutConfigured = health.paymentConfigured === true && health.orderStorageConfigured === true && health.firebaseCatalogueReadable === true && (checkoutMode !== 'live' || health.livePaymentsEnabled === true);
         paymentButton.disabled = !testCheckoutConfigured;
+        paymentButton.textContent = checkoutMode === 'live' ? 'Pay securely' : 'Pay securely (Test Mode)';
         if (paymentNote) {
-          if (testCheckoutConfigured) {
+          if (testCheckoutConfigured && checkoutMode === 'live') {
+            paymentNote.textContent = 'Razorpay Live Mode is ready. Real customer payments are enabled.';
+          } else if (testCheckoutConfigured) {
             paymentNote.textContent = 'Razorpay Test Mode is ready. Test payments do not collect real money.';
           } else if (health.paymentConfigReason === 'rejected') {
-            paymentNote.textContent = 'Razorpay did not accept the Test Mode Key ID and Key Secret pair. They must come from the same Razorpay Test Mode account. Correct the two Cloudflare secrets, deploy, then refresh this page.';
+            paymentNote.textContent = 'Razorpay did not accept the selected ' + (checkoutMode === 'live' ? 'Live' : 'Test') + ' Mode credentials. Check that the matching Key ID and Key Secret were generated for the selected mode.';
           } else if (health.paymentConfigReason === 'unavailable') {
-            paymentNote.textContent = 'Could not verify the Test Mode credentials with Razorpay right now. Please retry shortly; WhatsApp ordering is still available.';
+            paymentNote.textContent = 'Could not verify the selected Razorpay credentials right now. Please retry shortly; WhatsApp ordering is still available.';
           } else if (health.paymentConfigReason === 'missing') {
-            paymentNote.textContent = 'The required Razorpay Test Mode credentials are missing or incorrectly named in Cloudflare Worker Secrets.';
+            paymentNote.textContent = checkoutMode === 'live'
+              ? 'Live Mode is selected but Live credentials are missing. Add RAZORPAY_LIVE_KEY_ID and RAZORPAY_LIVE_KEY_SECRET in Cloudflare, then refresh this page.'
+              : 'The required Razorpay Test Mode credentials are missing or incorrectly named in Cloudflare Worker Secrets.';
           } else {
-            paymentNote.textContent = 'Online test checkout is not ready yet. Use WhatsApp ordering while the secure checkout configuration is checked.';
+            paymentNote.textContent = 'Secure checkout is not ready yet. Use WhatsApp ordering while the selected payment-mode configuration is checked.';
           }
         }
       })
@@ -541,7 +548,7 @@ function setupCart() {
           amount: orderData.amount,
           currency: orderData.currency,
           name: 'Jija Studio',
-          description: 'Jija Studio order · Test Mode',
+          description: checkoutMode === 'live' ? 'Jija Studio order' : 'Jija Studio order · Test Mode',
           order_id: orderData.razorpayOrderId,
           prefill: { name: customer.name, contact: customer.phone },
           notes: { jija_order_id: orderData.internalOrderId },
@@ -571,7 +578,7 @@ function setupCart() {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
             } finally {
               paymentButton.disabled = !testCheckoutConfigured;
-              paymentButton.textContent = 'Pay securely (Test Mode)';
+              paymentButton.textContent = checkoutMode === 'live' ? 'Pay securely' : 'Pay securely (Test Mode)';
             }
           }
         });
@@ -582,7 +589,7 @@ function setupCart() {
           say(message + ' No paid order has been confirmed. You may retry or use WhatsApp ordering.');
         });
         checkout.open();
-        say('Razorpay Test Mode opened. Complete a test payment to continue.');
+        say(checkoutMode === 'live' ? 'Razorpay Live Mode opened. Complete your payment to place the order.' : 'Razorpay Test Mode opened. Complete a test payment to continue.');
       } catch (error) {
         say(error.message || 'Secure checkout could not be started. Use WhatsApp ordering for now.');
       } finally {
