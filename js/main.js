@@ -484,11 +484,11 @@ function setupCart() {
           } else if (health.paymentConfigReason === 'rejected') {
             paymentNote.textContent = 'Secure online payment is temporarily unavailable. Please try again later or place your order on WhatsApp.';
           } else if (health.paymentConfigReason === 'unavailable') {
-            paymentNote.textContent = 'Could not verify the selected Razorpay credentials right now. Please retry shortly; WhatsApp ordering is still available.';
+            paymentNote.textContent = 'Secure online payment could not be checked right now. Please retry shortly or place your order on WhatsApp.';
           } else if (health.paymentConfigReason === 'missing') {
             paymentNote.textContent = 'Secure online payment is temporarily unavailable. Please try again later or place your order on WhatsApp.';
           } else {
-            paymentNote.textContent = 'Secure checkout is not ready yet. Use WhatsApp ordering while the selected payment-mode configuration is checked.';
+            paymentNote.textContent = 'Secure online payment is temporarily unavailable. Please try again later or place your order on WhatsApp.';
           }
         }
       })
