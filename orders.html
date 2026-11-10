@@ -7,13 +7,102 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 import { firebaseConfig } from "./js/firebase-config.js";
-const app=initializeApp(firebaseConfig,"jija-orders-admin"),auth=getAuth(app),db=getDatabase(app);
-const $=id=>document.getElementById(id),money=v=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(Number(v)||0);
-$("login").addEventListener("submit",async e=>{e.preventDefault();$("login-status").textContent="Signing in…";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(err){$("login-status").textContent="Sign in failed: "+(err.code||err.message)}});
-onAuthStateChanged(auth,user=>{if(user){$("login").hidden=true;$("orders-panel").hidden=false;loadOrders()}else{$("login").hidden=false;$("orders-panel").hidden=true}});
-$("logout").addEventListener("click",()=>signOut(auth));$("refresh").addEventListener("click",loadOrders);
-async function loadOrders(){ $("orders-status").textContent="Loading orders…";try{const snap=await get(ref(db,"orders"));const raw=snap.exists()?snap.val():{};const orders=Object.entries(raw).map(([id,o])=>({...o,id})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));$("orders-status").textContent=orders.length+" order(s)";$("orders-list").innerHTML=orders.map(o=>'<article class="order-card"><h3>'+esc(o.orderNumber||o.id)+' · '+esc(o.paymentStatus||"pending")+'</h3><div class="order-grid"><div><strong>Customer</strong><br>'+esc(o.customer?.name)+'<br>'+esc(o.customer?.phone)+'</div><div><strong>Delivery address</strong><br>'+esc(o.customer?.address)+'<br>PIN '+esc(o.customer?.pin)+'</div><div><strong>Payment</strong><br>'+money(o.total)+' · '+esc(o.razorpayPaymentId||"Not captured")+'<br><span class="muted">Created '+new Date(o.createdAt||Date.now()).toLocaleString("en-IN")+'</span></div></div><ul class="order-items">'+(o.items||[]).map(i=>'<li>'+esc(i.name)+' ('+esc(i.size||"One Size")+(i.colour?' · '+esc(i.colour):'')+') × '+Number(i.quantity||0)+' — '+money(i.lineTotal)+'</li>').join('')+'</ul><label>Fulfilment status <select data-order-status="'+esc(o.id)+'">'+["confirmed","processing","packed","shipped","delivered","cancelled"].map(s=>'<option value="'+s+'" '+(o.orderStatus===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label><button class="button button-outline" data-save-order="'+esc(o.id)+'">Save status</button><p class="muted">WhatsApp: '+esc(o.whatsappNotificationStatus||"pending")+'</p></article>').join('')||'<p>No orders yet.</p>';$("orders-list").querySelectorAll("[data-save-order]").forEach(b=>b.addEventListener("click",async()=>{const id=b.dataset.saveOrder;const status=$("orders-list").querySelector('[data-order-status="'+CSS.escape(id)+'"]').value;try{await update(ref(db,"orders/"+id),{orderStatus:status,updatedAt:Date.now()});$("orders-status").textContent="Status saved."}catch(err){$("orders-status").textContent="Could not update status. Check admin database rules: "+err.message}})});}catch(err){$("orders-status").textContent="Could not load orders. Check Realtime Database rules for admin access: "+err.message}}
-function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+const app = initializeApp(firebaseConfig, "jija-orders-admin-v2");
+const auth = getAuth(app);
+const PAYMENT_BACKEND = "https://jija-studio-payments.jijastudio-payments-test.workers.dev";
+const $ = id => document.getElementById(id);
+const money = value => new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",maximumFractionDigits:0}).format(Number(value)||0);
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+async function api(path, body = {}) {
+  if (!auth.currentUser) throw new Error("Please sign in again.");
+  const token = await auth.currentUser.getIdToken();
+  const response = await fetch(PAYMENT_BACKEND + path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Authorization": "Bearer " + token,
+      "X-Firebase-Api-Key": firebaseConfig.apiKey
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "The order service could not complete the request.");
+  return data;
+}
+$("login").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("login-status").textContent = "Signing in…";
+  try {
+    await signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value);
+  } catch (error) {
+    $("login-status").textContent = "Sign in failed: " + (error.code || error.message);
+  }
+});
+onAuthStateChanged(auth, user => {
+  if (user) {
+    $("login").hidden = true;
+    $("orders-panel").hidden = false;
+    loadOrders();
+  } else {
+    $("login").hidden = false;
+    $("orders-panel").hidden = true;
+  }
+});
+$("logout").addEventListener("click", () => signOut(auth));
+$("refresh").addEventListener("click", loadOrders);
+
+async function loadOrders() {
+  $("orders-status").textContent = "Loading orders…";
+  try {
+    const data = await api("/api/admin/orders");
+    const orders = (data.orders || []).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+    $("orders-status").textContent = orders.length + " order(s)";
+    $("orders-list").innerHTML = orders.map(order => {
+      const customer = order.customer || {};
+      const items = Array.isArray(order.items) ? order.items : [];
+      const statusChoices = ["confirmed","processing","packed","shipped","delivered","cancelled"]
+        .map(status => '<option value="' + status + '" ' + (order.orderStatus === status ? "selected" : "") + '>' + status + '</option>').join("");
+      const paid = order.paymentStatus === "paid";
+      const statusTools = paid
+        ? '<label>Fulfilment status <select data-order-status="' + esc(order.id) + '">' + statusChoices + '</select></label><button class="button button-outline" data-save-order="' + esc(order.id) + '">Save status</button>'
+        : '<p class="muted">Fulfilment status can be updated after payment is confirmed.</p>';
+      const customerPhone = String(customer.phone || "").replace(/[^0-9]/g, "");
+      const whatsapp = customerPhone
+        ? '<a target="_blank" rel="noopener" href="https://wa.me/' + esc(customerPhone) + '?text=' + encodeURIComponent("Hello " + (customer.name || "") + " — Jija Studio order " + (order.orderNumber || order.id) + ".") + '">WhatsApp customer</a>'
+        : "";
+      const itemHtml = items.map(item => '<li>' + esc(item.name) + ' (' + esc(item.size || "One Size") + (item.colour ? ' · ' + esc(item.colour) : '') + ') × ' + Number(item.quantity || 0) + ' — ' + money(item.lineTotal) + '</li>').join("");
+      const notifyStatus = order.whatsappNotificationStatus === "sent" ? "sent" : (order.whatsappNotificationStatus === "failed" ? "failed — check WhatsApp API settings" : "not configured");
+      return '<article class="order-card"><h3>' + esc(order.orderNumber || order.id) + ' · ' + esc(order.paymentStatus || "pending") + '</h3>' +
+        '<div class="order-grid"><div><strong>Customer</strong><br>' + esc(customer.name || "Not provided") + '<br>' + esc(customer.phone || "Not provided") + (whatsapp ? '<br>' + whatsapp : '') +
+        '</div><div><strong>Delivery address</strong><br>' + esc(customer.address || "Not provided") + '<br>PIN ' + esc(customer.pin || "—") +
+        '</div><div><strong>Payment</strong><br>' + money(order.total) + ' · ' + esc(order.razorpayPaymentId || "Not captured") +
+        '<br><span class="muted">Created ' + new Date(order.createdAt || Date.now()).toLocaleString("en-IN") + '</span></div></div>' +
+        '<ul class="order-items">' + itemHtml + '</ul>' + statusTools +
+        '<p class="muted">Automatic WhatsApp alert: ' + esc(notifyStatus) + '</p></article>';
+    }).join("") || '<p>No checkout orders yet.</p>';
+    $("orders-list").querySelectorAll("[data-save-order]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const id = button.dataset.saveOrder;
+        const selector = '[data-order-status="' + CSS.escape(id) + '"]';
+        const status = $("orders-list").querySelector(selector).value;
+        button.disabled = true;
+        try {
+          await api("/api/admin/order-status", {id, status});
+          $("orders-status").textContent = "Order status saved.";
+        } catch (error) {
+          $("orders-status").textContent = "Could not save status: " + error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+  } catch (error) {
+    $("orders-status").textContent = "Could not load orders: " + error.message + " If this says admin access denied, sign in with the authorized store admin email.";
+  }
+}
 </script></body></html>
