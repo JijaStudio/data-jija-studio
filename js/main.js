@@ -555,9 +555,13 @@ function setupCart() {
               if (!verifyResponse.ok || verification.verified !== true) {
                 throw new Error(verification.error || 'Payment could not be verified yet. Please contact Jija Studio before retrying.');
               }
+              const trackingToken = verification.trackingToken || orderData.trackingToken || '';
+              saveCustomerOrderTrack(trackingToken, verification.orderNumber || orderData.orderNumber || 'Your order', 'confirmed');
               saveCart([]);
               form.reset();
-              window.location.href = 'order-confirmation.html?order=' + encodeURIComponent(verification.orderId || orderData.internalOrderId);
+              window.location.href = trackingToken
+                ? 'index.html?trackOrder=1'
+                : 'order-confirmation.html?order=' + encodeURIComponent(verification.orderId || orderData.internalOrderId);
               return;
             } catch (error) {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
@@ -612,7 +616,114 @@ function setupContact() {
   const form = document.querySelector('#contact-form'); form?.addEventListener('submit', event => { event.preventDefault(); const data = new FormData(form); const message = `Hello Jija Studio!\nName: ${data.get('name')}\nPhone: ${data.get('phone')}\nMessage: ${data.get('message')}`; window.open(whatsappLink(message), '_blank', 'noopener,noreferrer'); });
 }
 
+
+// Customer-only order tracking is tied to a long random token, not a guessable order number.
+function readCustomerOrderTracks() {
+  try {
+    const data = JSON.parse(localStorage.getItem('jijaOrderTracks') || '[]');
+    return Array.isArray(data) ? data.filter(item => item && typeof item.token === 'string' && item.token.length >= 40) : [];
+  } catch { return []; }
+}
+function saveCustomerOrderTrack(token, orderNumber, lastStatus = 'confirmed') {
+  if (typeof token !== 'string' || token.length < 40) return false;
+  const saved = readCustomerOrderTracks().filter(item => item.token !== token);
+  saved.unshift({ token, orderNumber: String(orderNumber || 'Jija Studio order'), lastStatus, savedAt: Date.now() });
+  try {
+    localStorage.setItem('jijaOrderTracks', JSON.stringify(saved.slice(0, 5)));
+    return true;
+  } catch (error) {
+    console.warn('Order was confirmed, but local tracking could not be saved on this device.', error);
+    return false;
+  }
+}
+function initCustomerOrderTracking() {
+  const panel = document.getElementById('customer-order-tracking');
+  const list = document.getElementById('customer-order-tracking-list');
+  const message = document.getElementById('customer-order-tracking-message');
+  if (!panel || !list || !message) return;
+  const params = new URLSearchParams(window.location.search);
+  const directToken = params.get('track');
+  const forcedOpen = params.get('trackOrder') === '1';
+  if (directToken && directToken.length >= 40) {
+    const saved = readCustomerOrderTracks();
+    if (!saved.some(item => item.token === directToken)) {
+      saved.unshift({ token: directToken, orderNumber: 'Your order', lastStatus: '', savedAt: Date.now() });
+      try { localStorage.setItem('jijaOrderTracks', JSON.stringify(saved.slice(0, 5))); } catch {}
+    }
+    try { history.replaceState(null, '', window.location.pathname + '?trackOrder=1'); } catch {}
+  }
+  const statusLabels = {
+    payment_pending: 'Payment confirmation pending',
+    confirmed: 'Order confirmed',
+    processing: 'Processing your order',
+    packed: 'Packed and ready to ship',
+    shipped: 'Shipped / in transit',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled'
+  };
+  const stages = [
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'processing', label: 'Processing' },
+    { key: 'packed', label: 'Packed' },
+    { key: 'shipped', label: 'Shipped' },
+    { key: 'delivered', label: 'Delivered' }
+  ];
+  let firstLoad = true;
+  async function refreshTracking() {
+    const saved = readCustomerOrderTracks();
+    if (!saved.length) {
+      panel.hidden = !forcedOpen;
+      list.innerHTML = '';
+      message.textContent = forcedOpen
+        ? 'No saved order is linked to this browser yet. Open the private tracking link from your order confirmation on the device you used to place the order.'
+        : '';
+      firstLoad = false;
+      return;
+    }
+    panel.hidden = false;
+    const rendered = await Promise.all(saved.map(async (track) => {
+      try {
+        const response = await fetch(PAYMENT_BACKEND + '/api/order-status?token=' + encodeURIComponent(track.token), {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Tracking is temporarily unavailable.');
+        const currentStatus = data.orderStatus || (data.paymentStatus === 'paid' ? 'confirmed' : 'payment_pending');
+        if (track.lastStatus && track.lastStatus !== currentStatus) {
+          message.textContent = 'Order ' + (data.orderNumber || track.orderNumber || '') + ' update: ' + (statusLabels[currentStatus] || currentStatus) + '.';
+          if (!firstLoad) showToast(message.textContent);
+        }
+        track.lastStatus = currentStatus;
+        track.orderNumber = data.orderNumber || track.orderNumber || 'Jija Studio order';
+        const index = stages.findIndex(stage => stage.key === currentStatus);
+        const completed = new Set((data.history || []).map(event => event.status));
+        const historyFor = key => (data.history || []).filter(event => event.status === key).slice(-1)[0];
+        const timeline = currentStatus === 'cancelled'
+          ? '<p class="order-track-cancelled">This order has been cancelled. Please contact Jija Studio if you need help.</p>'
+          : '<ol class="order-track-steps">' + stages.map((stage, i) => {
+              const done = index >= 0 && i <= index;
+              const event = historyFor(stage.key);
+              const when = event && event.at ? new Date(event.at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+              const isCurrent = stage.key === currentStatus;
+              return '<li class="' + (done ? 'is-done ' : '') + (isCurrent ? 'is-current' : '') + '"><span class="order-track-dot">' + (done ? '✓' : String(i + 1)) + '</span><span class="order-track-stage">' + stage.label + '</span>' + (when ? '<small>' + escapeHTML(when) + '</small>' : '') + '</li>';
+            }).join('') + '</ol>';
+        const updated = data.statusUpdatedAt ? 'Last update: ' + new Date(data.statusUpdatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+        return '<article class="order-track-card"><div class="order-track-head"><div><p class="eyebrow">Order tracking</p><h3>' + escapeHTML(data.orderNumber || track.orderNumber || 'Jija Studio order') + '</h3></div><span class="order-track-badge">' + escapeHTML(statusLabels[currentStatus] || currentStatus) + '</span></div><p class="order-track-summary">' + (data.paymentStatus === 'paid' ? 'Payment verified' : 'Payment status: ' + escapeHTML(data.paymentStatus || 'pending')) + (updated ? ' · ' + escapeHTML(updated) : '') + '</p>' + timeline + '</article>';
+      } catch (error) {
+        return '<article class="order-track-card"><h3>' + escapeHTML(track.orderNumber || 'Your order') + '</h3><p class="order-track-summary">' + escapeHTML(error.message || 'Order tracking is temporarily unavailable. Please refresh shortly.') + '</p></article>';
+      }
+    }));
+    try { localStorage.setItem('jijaOrderTracks', JSON.stringify(saved)); } catch {}
+    list.innerHTML = rendered.join('');
+    firstLoad = false;
+  }
+  void refreshTracking();
+  window.setInterval(() => { void refreshTracking(); }, 20000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  try { initCustomerOrderTracking(); } catch (error) { console.warn('Customer order tracking could not initialize.', error); }
   // Initialize checkout independently first. A failure in an unrelated homepage,
   // theme, wishlist, or Firebase-settings enhancement must not disable ordering.
   try {
