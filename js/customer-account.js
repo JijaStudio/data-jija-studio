@@ -1,10 +1,7 @@
-import { auth } from "./firebase-config.js";
-import { RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
 const $ = id => document.getElementById(id);
 const accountApi = () => window.JijaCustomerAuth;
-let confirmationResult = null;
-let recaptchaVerifier = null;
+const auth = { get currentUser() { return accountApi()?.getUser() || null; } };
+let pendingOtpPhone = "";
 let loadedUid = "";
 let orderRefreshTimer = null;
 let orderLoadInProgress = false;
@@ -115,7 +112,7 @@ async function loadProfile(user) {
     sayProfile(error.message || "Your profile could not be loaded.");
   }
 }
-onAuthStateChanged(auth, user => {
+function handleAuthChange(user) {
   $("login-card").hidden = Boolean(user);
   $("account-panel").hidden = !user;
   if (orderRefreshTimer) { clearInterval(orderRefreshTimer); orderRefreshTimer = null; }
@@ -126,7 +123,9 @@ onAuthStateChanged(auth, user => {
   if (loadedUid === user.uid) return;
   loadedUid = user.uid;
   void loadProfile(user);
-});
+}
+window.addEventListener("jija-auth-change", event => handleAuthChange(event.detail?.user || null));
+accountApi().ready.then(user => handleAuthChange(user));
 
 $("phone-form").addEventListener("submit", async event => {
   event.preventDefault();
@@ -135,40 +134,34 @@ $("phone-form").addEventListener("submit", async event => {
   sayLogin("Preparing secure verification…");
   try {
     const phone = normalizeIndianPhone($("phone-input").value);
-    if (recaptchaVerifier) {
-      try { recaptchaVerifier.clear(); } catch {}
-      recaptchaVerifier = null;
-    }
-    recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "normal" });
-    await recaptchaVerifier.render();
-    confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-    $("phone-input").value = phone;
+    const result = await accountApi().sendOtp(phone);
+    pendingOtpPhone = result.phone || phone;
+    $("phone-input").value = pendingOtpPhone;
     $("phone-form").hidden = true;
     $("otp-form").hidden = false;
     sayLogin("Verification code sent. Check your SMS messages.");
     $("otp-input").focus();
   } catch (error) {
     sayLogin(error.message || "Could not send the verification code. Please try again.");
-    if (recaptchaVerifier) { try { recaptchaVerifier.clear(); } catch {} recaptchaVerifier = null; }
   } finally { button.disabled = false; }
 });
 $("otp-form").addEventListener("submit", async event => {
   event.preventDefault();
-  if (!confirmationResult) { sayLogin("Please request a new verification code."); return; }
+  if (!pendingOtpPhone) { sayLogin("Please request a new verification code."); return; }
   const button = $("verify-otp");
   button.disabled = true;
   sayLogin("Verifying your number…");
   try {
     const code = $("otp-input").value.trim();
-    if (!/^\d{6}$/.test(code)) throw new Error("Enter the six-digit code from the SMS.");
-    await confirmationResult.confirm(code);
+    if (!/^\\d{6}$/.test(code)) throw new Error("Enter the six-digit code from the SMS.");
+    await accountApi().verifyOtp(pendingOtpPhone, code);
     sayLogin("Mobile number verified. Your account is ready.");
   } catch (error) {
     sayLogin(error.message || "The code could not be verified. Please check it and retry.");
   } finally { button.disabled = false; }
 });
 $("change-number").addEventListener("click", () => {
-  confirmationResult = null;
+  pendingOtpPhone = "";
   $("otp-form").hidden = true;
   $("phone-form").hidden = false;
   $("otp-input").value = "";
@@ -198,6 +191,6 @@ $("profile-form").addEventListener("submit", async event => {
 });
 $("refresh-orders").addEventListener("click", loadOrders);
 $("sign-out").addEventListener("click", async () => {
-  try { await signOut(auth); sayLogin("You have signed out."); } catch (error) { sayLogin(error.message || "Could not sign out."); }
+  try { await accountApi().signOut(); sayLogin("You have signed out."); } catch (error) { sayLogin(error.message || "Could not sign out."); }
 });
 document.querySelectorAll("[data-year]").forEach(node => { node.textContent = new Date().getFullYear(); });
