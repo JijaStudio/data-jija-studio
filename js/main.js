@@ -12,10 +12,35 @@ const STORE_CONFIG = {
 };
 
 const money = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0);
+const PAYMENT_BACKEND = 'https://jija-studio-payments.jijastudio-payments-test.workers.dev';
 const getCart = () => { try { return JSON.parse(window.localStorage.getItem('jijaCart') || '[]'); } catch { return []; } };
 const saveCart = cart => { try { window.localStorage.setItem('jijaCart', JSON.stringify(cart)); } catch (error) { console.warn('Cart could not be saved in this browser context.', error); } updateCartCount(); };
 const findProduct = id => products.find(product => product.id === String(id));
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
+// Merge secure, post-payment inventory overrides into the live catalogue without writing to Firebase.
+async function refreshInventoryOverrides() {
+  try {
+    const response = await fetch(PAYMENT_BACKEND + '/api/inventory', { headers: { 'Accept': 'application/json' } });
+    if (!response.ok) return false;
+    const data = await response.json();
+    let changed = false;
+    (data.inventory || []).forEach(row => {
+      const product = products.find(item => String(item.id) === String(row.productId));
+      if (!product) return;
+      const size = String(row.size || 'One Size');
+      const oldMap = product.stockBySize && typeof product.stockBySize === 'object' ? product.stockBySize : {};
+      const available = Math.max(0, Number(row.available) || 0);
+      if (Number(oldMap[size]) !== available) changed = true;
+      product.stockBySize = { ...oldMap, [size]: available };
+      if (size === 'One Size') product.stock = available;
+    });
+    return changed;
+  } catch (error) {
+    console.warn('Could not refresh the latest stock from the secure order service.', error);
+    return false;
+  }
+}
 
 function updateCartCount() {
   // Do not show a cart badge for stale cart entries whose products are no longer available.
@@ -195,6 +220,9 @@ window.addEventListener('jija:firebase-data-loaded', () => {
     setupProduct();
     setupCart();
     updateCartCount();
+    void refreshInventoryOverrides().then(changed => {
+      if (changed) { setupHome(); setupShop(); setupProduct(); }
+    });
   } catch (error) {
     console.error('Could not refresh Jija Studio from Firebase data.', error);
   }
@@ -436,7 +464,7 @@ function setupCart() {
   const copy = document.querySelector('#copy-upi'); copy?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(STORE_CONFIG.upiId); showToast('UPI ID copied'); } catch { showToast('Please copy the UPI ID shown above'); } });
   const paymentButton = document.querySelector('#razorpay-test-button');
   const paymentNote = document.querySelector('#razorpay-test-note');
-  const paymentBackend = 'https://jija-studio-payments.jijastudio-payments-test.workers.dev';
+  const paymentBackend = PAYMENT_BACKEND;
   let testCheckoutConfigured = false;
   if (paymentButton) {
     paymentButton.disabled = true;
@@ -529,9 +557,8 @@ function setupCart() {
               }
               saveCart([]);
               form.reset();
-              draw();
-              say('Test payment verified successfully. Test order reference: ' + verification.orderId + '. This is a test order; live payments are not enabled.');
-              if (paymentNote) paymentNote.textContent = 'Test payment verified. Live payments remain disabled.';
+              window.location.href = 'order-confirmation.html?order=' + encodeURIComponent(verification.orderId || orderData.internalOrderId);
+              return;
             } catch (error) {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
             } finally {
