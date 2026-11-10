@@ -454,12 +454,8 @@ function setupCart() {
     const status = document.querySelector('#checkout-message');
     // Launch the prefilled order directly in WhatsApp. If the browser blocks a new
     // tab, navigate the current tab to the same WhatsApp order link as a fallback.
-    const whatsappWindow = window.open(orderUrl, '_blank');
-    if (whatsappWindow) {
-      try { whatsappWindow.opener = null; } catch {}
-    } else {
-      window.location.href = orderUrl;
-    }
+    // Navigate the current tab directly so mobile browsers cannot block a popup.
+    window.location.href = orderUrl;
   });
 }
 function setupContact() {
