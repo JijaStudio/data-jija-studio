@@ -65,14 +65,17 @@ async function loadOrders() {
     $("orders-list").innerHTML = orders.map(order => {
       const customer = order.customer || {};
       const items = Array.isArray(order.items) ? order.items : [];
-      const statusLabels = {confirmed:"Confirmed", processing:"Processing", packed:"Packed", shipped:"Shipped / in transit", delivered:"Delivered", cancelled:"Cancelled"};
+      const statusLabels = {pending_confirmation:"Awaiting store confirmation",confirmed:"Confirmed", processing:"Processing", packed:"Packed", shipped:"Shipped / in transit", delivered:"Delivered", cancelled:"Cancelled"};
+      const paymentStatusLabels = {paid:"Paid",whatsapp_requested:"WhatsApp order request",created:"Payment pending",pending:"Payment pending"};
       const statusChoices = ["confirmed","processing","packed","shipped","delivered","cancelled"]
         .map(status => '<option value="' + status + '" ' + (order.orderStatus === status ? "selected" : "") + '>' + statusLabels[status] + '</option>').join("");
       const paid = order.paymentStatus === "paid";
+      const whatsappRequest = order.paymentStatus === "whatsapp_requested";
+      const canManageStatus = paid || whatsappRequest;
       const hasPaymentReference = Boolean(String(order.razorpayPaymentId || "").trim());
       const canDelete = !paid && !hasPaymentReference;
-      const statusTools = paid
-        ? '<label>Fulfilment status <select data-order-status="' + esc(order.id) + '">' + statusChoices + '</select></label><button class="button button-outline" data-save-order="' + esc(order.id) + '">Save status</button><p class="muted">Paid order records are retained for payment and refund history. Mark unavailable orders as Cancelled instead of deleting them.</p>'
+      const statusTools = canManageStatus
+        ? '<label>Fulfilment status <select data-order-status="' + esc(order.id) + '">' + statusChoices + '</select></label><button class="button button-outline" data-save-order="' + esc(order.id) + '">Save status</button><p class="muted">' + (paid ? "Paid order records are retained for payment and refund history." : "This WhatsApp order request can be confirmed after you check stock and payment with the customer.") + ' Mark unavailable orders as Cancelled.</p>'
         : canDelete
           ? '<p class="muted">This unpaid order has no payment reference and can be deleted if it is no longer needed.</p>'
           : '<p class="muted">This order has a payment reference, so keep the record and resolve its status instead of deleting it.</p>';
@@ -83,7 +86,7 @@ async function loadOrders() {
         : "";
       const itemHtml = items.map(item => '<li>' + esc(item.name) + ' (' + esc(item.size || "One Size") + (item.colour ? ' · ' + esc(item.colour) : '') + ') × ' + Number(item.quantity || 0) + ' — ' + money(item.lineTotal) + '</li>').join("");
       const notifyStatus = order.whatsappNotificationStatus === "sent" ? "sent" : (order.whatsappNotificationStatus === "failed" ? "failed — check WhatsApp API settings" : "not configured");
-      return '<article class="order-card"><h3>' + esc(order.orderNumber || order.id) + ' · ' + esc(order.paymentStatus || "pending") + ' · ' + esc(statusLabels[order.orderStatus] || order.orderStatus || "Payment pending") + '</h3>' +
+      return '<article class="order-card"><h3>' + esc(order.orderNumber || order.id) + ' · ' + esc(paymentStatusLabels[order.paymentStatus] || order.paymentStatus || "Payment pending") + ' · ' + esc(statusLabels[order.orderStatus] || order.orderStatus || "Payment pending") + '</h3>' +
         '<div class="order-grid"><div><strong>Customer</strong><br>' + esc(customer.name || "Not provided") + '<br>' + esc(customer.phone || "Not provided") + (whatsapp ? '<br>' + whatsapp : '') +
         '</div><div><strong>Delivery address</strong><br>' + esc(customer.address || "Not provided") + '<br>PIN ' + esc(customer.pin || "—") +
         '</div><div><strong>Payment</strong><br>' + money(order.total) + ' · ' + esc(order.razorpayPaymentId || "Not captured") +
