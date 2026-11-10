@@ -709,13 +709,25 @@ function initCustomerOrderTracking() {
               return '<li class="' + (done ? 'is-done ' : '') + (isCurrent ? 'is-current' : '') + '"><span class="order-track-dot">' + (done ? '✓' : String(i + 1)) + '</span><span class="order-track-stage">' + stage.label + '</span>' + (when ? '<small>' + escapeHTML(when) + '</small>' : '') + '</li>';
             }).join('') + '</ol>';
         const updated = data.statusUpdatedAt ? 'Last update: ' + new Date(data.statusUpdatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '';
-        return '<article class="order-track-card"><div class="order-track-head"><div><p class="eyebrow">Order tracking</p><h3>' + escapeHTML(data.orderNumber || track.orderNumber || 'Jija Studio order') + '</h3></div><span class="order-track-badge">' + escapeHTML(statusLabels[currentStatus] || currentStatus) + '</span></div><p class="order-track-summary">' + (data.paymentStatus === 'paid' ? 'Payment verified' : 'Payment status: ' + escapeHTML(data.paymentStatus || 'pending')) + (updated ? ' · ' + escapeHTML(updated) : '') + '</p>' + timeline + '</article>';
+        return '<article class="order-track-card"><div class="order-track-head"><div><p class="eyebrow">Order tracking</p><h3>' + escapeHTML(data.orderNumber || track.orderNumber || 'Jija Studio order') + '</h3></div><span class="order-track-badge">' + escapeHTML(statusLabels[currentStatus] || currentStatus) + '</span></div><p class="order-track-summary">' + (data.paymentStatus === 'paid' ? 'Payment verified' : 'Payment status: ' + escapeHTML(data.paymentStatus || 'pending')) + (updated ? ' · ' + escapeHTML(updated) : '') + '</p>' + timeline + '<button type="button" class="button button-outline" data-copy-track="' + escapeHTML(track.token) + '">Copy private tracking link</button></article>';
       } catch (error) {
         return '<article class="order-track-card"><h3>' + escapeHTML(track.orderNumber || 'Your order') + '</h3><p class="order-track-summary">' + escapeHTML(error.message || 'Order tracking is temporarily unavailable. Please refresh shortly.') + '</p></article>';
       }
     }));
     try { localStorage.setItem('jijaOrderTracks', JSON.stringify(saved)); } catch {}
     list.innerHTML = rendered.join('');
+    list.querySelectorAll('[data-copy-track]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const token = button.dataset.copyTrack || '';
+        const link = window.location.origin + '/index.html?track=' + encodeURIComponent(token);
+        try {
+          await navigator.clipboard.writeText(link);
+          showToast('Private order tracking link copied.');
+        } catch {
+          message.textContent = link;
+        }
+      });
+    });
     firstLoad = false;
   }
   void refreshTracking();
