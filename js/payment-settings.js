@@ -40,9 +40,6 @@ saveButton?.addEventListener('click', async () => {
   if (!auth.currentUser) return show('Please sign in again before saving.', true);
   const upiId = $('pay-upi-id').value.trim();
   const upiName = $('pay-upi-name').value.trim() || 'Jija Studio';
-  if ($('pay-upi-enabled').checked && !/^[^\s@]+@[^\s@]+$/.test(upiId)) {
-    return show('Enter a valid UPI ID or turn off manual UPI payments.', true);
-  }
   saveButton.disabled = true;
   show('Saving payment settings to Firebase…');
   try {
