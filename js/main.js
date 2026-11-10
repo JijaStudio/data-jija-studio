@@ -128,10 +128,9 @@ function applyAdminHomepageSettings() {
   if (offerBanner) offerBanner.innerHTML = '<span class="shipping-offer-icon">🚚</span><span><strong>Free delivery on orders above ' + money(threshold) + '</strong><small>Orders below ' + money(threshold) + ' have a flat ' + money(shippingFee) + ' delivery charge.</small></span>';
   const announcement = document.querySelector('[data-admin-announcement]');
   if (announcement && settings.announcement) announcement.textContent = settings.announcement;
-  if (settings.whatsappNumber && /^\d{10}$/.test(settings.whatsappNumber)) {
-    STORE_CONFIG.whatsappNumber = '91' + settings.whatsappNumber;
-    STORE_CONFIG.phoneDisplay = '+91 ' + settings.whatsappNumber.slice(0, 5) + ' ' + settings.whatsappNumber.slice(5);
-  }
+  // Keep every storefront order and contact link routed to the verified Jija Studio order number.
+  STORE_CONFIG.whatsappNumber = '918600761346';
+  STORE_CONFIG.phoneDisplay = '+91 86007 61346';
   const hero = document.querySelector('.hero');
   if (hero && settings.heroTitle) {
     const h = hero.querySelector('h1');
@@ -444,8 +443,14 @@ function setupCart() {
     const lines = cart.map(item => { const p = findProduct(item.id); return `• ${p.name} (${item.size || 'One Size'}${item.colour ? ', '+item.colour : ''}) × ${item.quantity} — ${money((p.salePrice || p.price) * item.quantity)}`; });
     const subtotal = cart.reduce((sum,item) => sum + (findProduct(item.id).salePrice || findProduct(item.id).price) * item.quantity,0); const shipping=subtotal>=freeThreshold?0:flatShippingFee; const total=subtotal+shipping;
     const message = `Hello Sharvari Jadhav! I'd like to place an order from Jija Studio.\n\nORDER ITEMS\n${lines.join('\n')}\n\nSubtotal: ${money(subtotal)}\nDelivery: ${shipping===0?'FREE':money(shipping)}\nTotal including delivery: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability, shipping charges and payment instructions. I understand this message is an order request, not a confirmed payment.`;
-    window.open(whatsappLink(message), '_blank', 'noopener,noreferrer');
-    const status = document.querySelector('#checkout-message'); if(status) { status.hidden = false; status.textContent = 'WhatsApp opened with your order request. Send the message to the store and wait for confirmation. Your cart has not been cleared.'; }
+    const orderUrl = whatsappLink(message);
+    const status = document.querySelector('#checkout-message');
+    if (status) {
+      status.hidden = false;
+      status.innerHTML = 'If WhatsApp does not open automatically, <a href="' + escapeHTML(orderUrl) + '" target="_blank" rel="noopener noreferrer">tap here to open your order message</a>. Then press Send in WhatsApp. You can also message <a href="https://wa.me/918600761346" target="_blank" rel="noopener noreferrer">+91 86007 61346</a>. Your cart has not been cleared.';
+    }
+    // Navigate in the current tab to avoid popup blockers on mobile browsers.
+    window.location.href = orderUrl;
   });
 }
 function setupContact() {
