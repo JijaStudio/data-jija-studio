@@ -513,9 +513,17 @@ function setupCart() {
       paymentButton.textContent = 'Preparing secure checkout…';
       say('Checking product prices and stock securely…');
       try {
+        if (!window.JijaCustomerAuth) throw new Error('Customer sign-in is not loaded. Please refresh and try again.');
+        const signedInUser = await window.JijaCustomerAuth.ready;
+        if (!signedInUser) {
+          say('Please sign in with your mobile number and complete your profile before ordering. Opening My Account…');
+          window.location.href = 'account.html?return=cart.html';
+          return;
+        }
+        const authHeaders = await window.JijaCustomerAuth.getHeaders();
         const response = await fetch(paymentBackend + '/api/create-order', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { ...authHeaders, 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({
             cart: cart.map(item => ({
               id: String(item.id),
@@ -555,13 +563,9 @@ function setupCart() {
               if (!verifyResponse.ok || verification.verified !== true) {
                 throw new Error(verification.error || 'Payment could not be verified yet. Please contact Jija Studio before retrying.');
               }
-              const trackingToken = verification.trackingToken || orderData.trackingToken || '';
-              saveCustomerOrderTrack(trackingToken, verification.orderNumber || orderData.orderNumber || 'Your order', 'confirmed');
               saveCart([]);
               form.reset();
-              window.location.href = trackingToken
-                ? 'index.html?trackOrder=1'
-                : 'order-confirmation.html?order=' + encodeURIComponent(verification.orderId || orderData.internalOrderId);
+              window.location.href = 'account.html?orders=1';
               return;
             } catch (error) {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
@@ -595,20 +599,48 @@ function setupCart() {
       status.textContent = 'Please complete the required delivery details above. Once they are valid, tap Place Order on WhatsApp again.';
     }
   }, true);
-  form?.addEventListener('submit', event => {
-    event.preventDefault(); const cart = getCart(); if (!cart.length) { showToast('Your bag is empty'); return; }
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const cart = getCart().filter(item => findProduct(item.id));
+    if (!cart.length) { showToast('Your bag is empty'); return; }
     if (!validateCartStock(cart,true)) { draw(); return; }
-    const data = new FormData(form); const name = String(data.get('customerName') || '').trim(); const phone = String(data.get('customerPhone') || '').trim(); const address = String(data.get('customerAddress') || '').trim(); const pin = String(data.get('customerPin') || '').trim();
-    if (!name || !phone || !address || !pin) { showToast('Please complete all delivery details'); return; }
-    const lines = cart.map(item => { const p = findProduct(item.id); return `• ${p.name} (${item.size || 'One Size'}${item.colour ? ', '+item.colour : ''}) × ${item.quantity} — ${money((p.salePrice || p.price) * item.quantity)}`; });
-    const subtotal = cart.reduce((sum,item) => sum + (findProduct(item.id).salePrice || findProduct(item.id).price) * item.quantity,0); const shipping=subtotal>=freeThreshold?0:flatShippingFee; const total=subtotal+shipping;
-    const message = `Hello Sharvari Jadhav! I'd like to place an order from Jija Studio.\n\nORDER ITEMS\n${lines.join('\n')}\n\nSubtotal: ${money(subtotal)}\nDelivery: ${shipping===0?'FREE':money(shipping)}\nTotal including delivery: ${money(total)}\n\nCUSTOMER DETAILS\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nPIN code: ${pin}\n\nPlease confirm availability, shipping charges and payment instructions. I understand this message is an order request, not a confirmed payment.`;
-    const orderUrl = whatsappLink(message);
+    const formData = new FormData(form);
+    const address = String(formData.get('customerAddress') || '').trim();
+    const pin = String(formData.get('customerPin') || '').trim();
+    if (!address || !/^\d{6}$/.test(pin)) { showToast('Please enter your full delivery address and valid 6-digit PIN code.'); return; }
+    if (!window.JijaCustomerAuth) { showToast('Customer sign-in is not loaded. Please refresh and try again.'); return; }
+    const customerUser = await window.JijaCustomerAuth.ready;
+    if (!customerUser) {
+      window.location.href = 'account.html?return=cart.html';
+      return;
+    }
+    const button = form.querySelector('button[type="submit"]');
+    if (button) { button.disabled = true; button.textContent = 'Saving your order…'; }
     const status = document.querySelector('#checkout-message');
-    // Launch the prefilled order directly in WhatsApp. If the browser blocks a new
-    // tab, navigate the current tab to the same WhatsApp order link as a fallback.
-    // Navigate the current tab directly so mobile browsers cannot block a popup.
-    window.location.href = orderUrl;
+    if (status) { status.hidden = false; status.textContent = 'Saving your order to your account before opening WhatsApp…'; }
+    try {
+      const authHeaders = await window.JijaCustomerAuth.getHeaders();
+      const response = await fetch(paymentBackend + '/api/customer/whatsapp-order', {
+        method: 'POST',
+        headers: { ...authHeaders, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          cart: cart.map(item => ({
+            id: String(item.id), quantity: Number(item.quantity),
+            size: String(item.size || 'One Size'), colour: String(item.colour || '')
+          })),
+          customer: { address, pin }
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'The order request could not be saved.');
+      const lines = (data.items || []).map(item => `• ${item.name} (${item.size || 'One Size'}${item.colour ? ', ' + item.colour : ''}) × ${item.quantity} — ${money(item.lineTotal)}`);
+      const message = `Hello Sharvari Jadhav! I'd like to place an order from Jija Studio.\n\nORDER NUMBER: ${data.orderNumber}\n\nORDER ITEMS\n${lines.join('\n')}\n\nTotal including delivery: ${money(data.total)}\n\nCUSTOMER DETAILS\nName: ${data.customer?.name || customerUser.displayName || ''}\nVerified phone: ${data.customer?.phone || customerUser.phoneNumber || ''}\nAddress: ${data.customer?.address || address}\nPIN code: ${data.customer?.pin || pin}\n\nPlease confirm product availability, delivery and payment instructions. This is an order request, not a confirmed payment. I can track the request in My Account.`;
+      saveCart([]);
+      window.location.href = whatsappLink(message);
+    } catch (error) {
+      if (status) { status.hidden = false; status.textContent = error.message || 'Could not save your order request. Please try again.'; }
+      if (button) { button.disabled = false; button.textContent = 'Place Order on WhatsApp'; }
+    }
   });
 }
 function setupContact() {
