@@ -523,7 +523,7 @@ function setupCart() {
         if (!window.JijaCustomerAuth) throw new Error('Customer sign-in is not loaded. Please refresh and try again.');
         const signedInUser = await window.JijaCustomerAuth.ready;
         if (!signedInUser) {
-          say('Please sign in with your mobile number and complete your profile before ordering. Opening My Account…');
+          say('Please sign in to your Jija Studio account and complete your profile before ordering. Opening My Account…');
           window.location.href = 'account.html?return=cart.html';
           return;
         }
@@ -635,13 +635,13 @@ function setupCart() {
             id: String(item.id), quantity: Number(item.quantity),
             size: String(item.size || 'One Size'), colour: String(item.colour || '')
           })),
-          customer: { address, pin }
+          customer: { phone: String(formData.get('customerPhone') || '').trim(), address, pin }
         })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'The order request could not be saved.');
       const lines = (data.items || []).map(item => `• ${item.name} (${item.size || 'One Size'}${item.colour ? ', ' + item.colour : ''}) × ${item.quantity} — ${money(item.lineTotal)}`);
-      const message = `Hello Sharvari Jadhav! I'd like to place an order from Jija Studio.\n\nORDER NUMBER: ${data.orderNumber}\n\nORDER ITEMS\n${lines.join('\n')}\n\nTotal including delivery: ${money(data.total)}\n\nCUSTOMER DETAILS\nName: ${data.customer?.name || customerUser.displayName || ''}\nVerified phone: ${data.customer?.phone || customerUser.phoneNumber || ''}\nAddress: ${data.customer?.address || address}\nPIN code: ${data.customer?.pin || pin}\n\nPlease confirm product availability, delivery and payment instructions. This is an order request, not a confirmed payment. I can track the request in My Account.`;
+      const message = `Hello Sharvari Jadhav! I'd like to place an order from Jija Studio.\n\nORDER NUMBER: ${data.orderNumber}\n\nORDER ITEMS\n${lines.join('\n')}\n\nTotal including delivery: ${money(data.total)}\n\nCUSTOMER DETAILS\nName: ${data.customer?.name || customerUser.displayName || ''}\nContact phone: ${data.customer?.phone || customerUser.phoneNumber || ''}\nAddress: ${data.customer?.address || address}\nPIN code: ${data.customer?.pin || pin}\n\nPlease confirm product availability, delivery and payment instructions. This is an order request, not a confirmed payment. I can track the request in My Account.`;
       saveCart([]);
       window.location.href = whatsappLink(message);
     } catch (error) {
