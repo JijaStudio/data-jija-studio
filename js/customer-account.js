@@ -116,6 +116,7 @@ async function loadProfile(user) {
 function handleAuthChange(user) {
   $("login-card").hidden = Boolean(user);
   $("account-panel").hidden = !user;
+  $("upgrade-account-card").hidden = !(user && user.phoneNumber && !user.email);
   if (orderRefreshTimer) { clearInterval(orderRefreshTimer); orderRefreshTimer = null; }
   if (!user) { loadedUid = ""; expandedTrackOrders.clear(); return; }
   orderRefreshTimer = setInterval(() => {
@@ -223,6 +224,40 @@ $("profile-form").addEventListener("submit", async event => {
   finally { button.disabled = false; }
 });
 $("refresh-orders").addEventListener("click", loadOrders);
+$("upgrade-account-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = $("upgrade-account-button");
+  button.disabled = true;
+  $("upgrade-account-status").textContent = "Linking your email and password to this existing account…";
+  try {
+    const password = $("upgrade-password").value;
+    const confirm = $("upgrade-password-confirm").value;
+    if (password !== confirm) throw new Error("The passwords do not match.");
+    const user = await accountApi().upgradePhoneAccount({
+      email: $("upgrade-email").value.trim(),
+      password,
+      name: $("profile-name").value.trim(),
+      phone: $("profile-phone").value.trim() || auth.currentUser?.phoneNumber || "",
+      address: $("profile-address").value.trim(),
+      pin: $("profile-pin").value.trim()
+    });
+    $("upgrade-password").value = "";
+    $("upgrade-password-confirm").value = "";
+    $("upgrade-account-card").hidden = true;
+    $("verified-phone").textContent = "Signed in as " + (user.email || "") + " · " + (user.phoneNumber || "");
+    $("upgrade-account-status").textContent = "Your existing account now supports email and password sign-in. Your account ID and existing order links are preserved.";
+    sayProfile("Existing account updated. You can now sign in with email and password.");
+    await loadProfile(user);
+  } catch (error) {
+    const code = String(error.code || "");
+    if (code.includes("email-already-in-use") || code.includes("credential-already-in-use")) {
+      $("upgrade-account-status").textContent = "That email already belongs to another account. Try a different email or contact Jija Studio at +91 86007 61346.";
+    } else {
+      $("upgrade-account-status").textContent = error.message || "Could not update your existing account. Please try again.";
+    }
+  } finally { button.disabled = false; }
+});
+
 $("sign-out").addEventListener("click", async () => {
   try { await accountApi().signOut(); sayLogin("You have signed out."); } catch (error) { sayLogin(error.message || "Could not sign out."); }
 });
