@@ -1,4 +1,4 @@
-import { auth, database } from './firebase-config.js';
+import { auth, database, storage } from './firebase-config.js';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -9,6 +9,7 @@ import {
   ref,
   set
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+import { getDownloadURL, ref as storageRef, uploadString } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
 
 const loginStatus = document.getElementById('firebase-login-status');
 const loginForm = document.getElementById('firebase-login-form');
@@ -40,6 +41,49 @@ async function writeFirebase(path, value) {
   await write;
 }
 
+function imageExtension(dataUrl) {
+  const match = /^data:image\/([a-zA-Z0-9.+-]+);base64,/.exec(dataUrl);
+  if (!match) return null;
+  const type = match[1].toLowerCase();
+  return type === 'jpeg' ? 'jpg' : (type === 'svg+xml' ? 'svg' : type.replace(/[^a-z0-9]/g, '')) || 'png';
+}
+
+// Move embedded product photos to Firebase Storage before syncing the catalogue.
+// If an upload fails, the Realtime Database write is aborted so existing products remain intact.
+async function externalizeProductImages(products) {
+  const uploaded = new Map();
+  async function externalize(value, productId, slot) {
+    if (typeof value !== 'string' || !value.startsWith('data:image/')) return value;
+    if (uploaded.has(value)) return uploaded.get(value);
+    const extension = imageExtension(value);
+    if (!extension) throw new Error('A product image has an unsupported data URL. No catalogue changes were saved.');
+    const safeId = String(productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
+    const path = `product-images/${safeId}/${slot}-${Date.now()}.${extension}`;
+    const fileRef = storageRef(storage, path);
+    await uploadString(fileRef, value, 'data_url');
+    const url = await getDownloadURL(fileRef);
+    uploaded.set(value, url);
+    return url;
+  }
+
+  const result = [];
+  for (const product of products) {
+    if (!product || typeof product !== 'object') { result.push(product); continue; }
+    const copy = { ...product };
+    const id = copy.id || 'product';
+    if (typeof copy.image === 'string') copy.image = await externalize(copy.image, id, 'main');
+    if (Array.isArray(copy.images)) {
+      const images = [];
+      for (let index = 0; index < copy.images.length; index++) {
+        images.push(await externalize(copy.images[index], id, `gallery-${index + 1}`));
+      }
+      copy.images = images;
+    }
+    result.push(copy);
+  }
+  return result;
+}
+
 async function syncLocalToFirebase(key, rawValue) {
   if (!readyToSync || !auth.currentUser) return;
   let value;
@@ -51,6 +95,7 @@ async function syncLocalToFirebase(key, rawValue) {
     return;
   }
   try {
+    if (path === 'products' && Array.isArray(value)) value = await externalizeProductImages(value);
     await writeFirebase(path, value);
     status('Connected to Firebase · changes synced');
   } catch (error) {
@@ -71,7 +116,8 @@ window.jijaSaveFirebaseProducts = async function(value) {
   if (!Array.isArray(value) || value.length === 0) {
     throw new Error('Safety stop: refusing to replace the Firebase catalogue with an empty product list.');
   }
-  await writeFirebase('products', value);
+  const productsWithHostedImages = await externalizeProductImages(value);
+  await writeFirebase('products', productsWithHostedImages);
   status('Connected to Firebase · products synced');
   return true;
 };
