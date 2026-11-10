@@ -445,9 +445,19 @@ function setupCart() {
       .then(health => {
         testCheckoutConfigured = health.paymentConfigured === true && health.orderStorageConfigured === true && health.firebaseCatalogueReadable === true;
         paymentButton.disabled = !testCheckoutConfigured;
-        if (paymentNote) paymentNote.textContent = testCheckoutConfigured
-          ? 'Razorpay Test Mode is ready. Test payments do not collect real money.'
-          : 'Online test checkout is not ready yet. Use WhatsApp ordering while the secure test credentials are configured.';
+        if (paymentNote) {
+          if (testCheckoutConfigured) {
+            paymentNote.textContent = 'Razorpay Test Mode is ready. Test payments do not collect real money.';
+          } else if (health.paymentConfigReason === 'rejected') {
+            paymentNote.textContent = 'Razorpay did not accept the Test Mode Key ID and Key Secret pair. They must come from the same Razorpay Test Mode account. Correct the two Cloudflare secrets, deploy, then refresh this page.';
+          } else if (health.paymentConfigReason === 'unavailable') {
+            paymentNote.textContent = 'Could not verify the Test Mode credentials with Razorpay right now. Please retry shortly; WhatsApp ordering is still available.';
+          } else if (health.paymentConfigReason === 'missing') {
+            paymentNote.textContent = 'The required Razorpay Test Mode credentials are missing or incorrectly named in Cloudflare Worker Secrets.';
+          } else {
+            paymentNote.textContent = 'Online test checkout is not ready yet. Use WhatsApp ordering while the secure checkout configuration is checked.';
+          }
+        }
       })
       .catch(() => {
         if (paymentNote) paymentNote.textContent = 'The secure checkout service could not be reached. You can still place an order request through WhatsApp.';
