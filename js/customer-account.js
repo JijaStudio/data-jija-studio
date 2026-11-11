@@ -55,7 +55,7 @@ function orderTrackingMarkup(order) {
 }
 function renderOrders(orders) {
   if (!orders.length) {
-    $("customer-orders").innerHTML = '<div class="empty-state"><h3>Your Jija Studio orders will appear here.</h3><p>Once you place an order while signed in, you can return to this account to track progress.</p><a class="button button-primary" href="shop.html">Explore the shop</a></div>';
+    $("customer-orders").innerHTML = '<div class="empty-state"><h3>Your paid orders will appear here.</h3><p>An order is listed only after payment is successfully confirmed. Unpaid or abandoned checkout attempts will not appear in order tracking.</p><a class="button button-primary" href="shop.html">Explore the shop</a></div>';
     return;
   }
   $("customer-orders").innerHTML = orders.map(order => {
