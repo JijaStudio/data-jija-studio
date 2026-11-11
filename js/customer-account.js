@@ -84,8 +84,11 @@ async function loadOrders() {
   try {
     $("orders-status").textContent = "Refreshing your orders…";
     const data = await accountApi().api("/api/customer/orders");
-    renderOrders(data.orders || []);
-    $("orders-status").textContent = (data.orders || []).length + " order(s) in your account. Last checked " + new Date().toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"}) + ".";
+    // Only successfully captured/verified payments count as placed orders.
+    // Hide abandoned checkouts and failed/pending payment attempts from customer tracking.
+    const paidOrders = (data.orders || []).filter(order => String(order.paymentStatus || "").toLowerCase() === "paid");
+    renderOrders(paidOrders);
+    $("orders-status").textContent = paidOrders.length + " paid order(s) in your account. Last checked " + new Date().toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"}) + ".";
   } catch (error) {
     $("orders-status").textContent = error.message || "Your orders could not be loaded.";
   } finally {
