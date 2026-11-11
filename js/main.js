@@ -53,36 +53,6 @@ function whatsappLink(message = 'Hello Jija Studio! I have a question about your
   return `https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
-function openWhatsAppAfterPayment(message) {
-  const number = String(STORE_CONFIG.whatsappNumber || '').replace(/[^0-9]/g, '');
-  const encodedText = encodeURIComponent(String(message || ''));
-  const webUrl = 'https://wa.me/' + number + '?text=' + encodedText;
-  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') ||
-    (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints || 0) > 1);
-
-  // Desktop: open the usual click-to-chat link.
-  if (!isMobile) {
-    window.location.assign(webUrl);
-    return;
-  }
-
-  // Mobile: try the installed WhatsApp app directly first.
-  let fallbackTimer = 0;
-  const stopFallbackWhenAppOpens = () => {
-    if (document.hidden) {
-      window.clearTimeout(fallbackTimer);
-      document.removeEventListener('visibilitychange', stopFallbackWhenAppOpens);
-    }
-  };
-  document.addEventListener('visibilitychange', stopFallbackWhenAppOpens);
-  window.location.href = 'whatsapp://send?phone=' + number + '&text=' + encodedText;
-
-  // If the phone cannot hand off to the app, fall back to WhatsApp's click-to-chat page.
-  fallbackTimer = window.setTimeout(() => {
-    document.removeEventListener('visibilitychange', stopFallbackWhenAppOpens);
-    if (!document.hidden) window.location.assign(webUrl);
-  }, 1800);
-}
 
 function isDemoProduct(p) { return !p || p.placeholder === true || String(p.id) === '121' || /demo|sample product|dusty rose floral embroidered kurta set with dupatta/i.test(String(p.name || '')); }
 
@@ -636,9 +606,37 @@ function setupCart() {
                 '',
                 'Please confirm receipt of this order and share the next update. Thank you.'
               ].join('\n');
+              try {
+                sessionStorage.setItem('jijaPaidWhatsappHandoff', JSON.stringify({
+                  paymentVerified: true,
+                  orderNumber: verifiedOrderNumber,
+                  paymentId,
+                  totalPaid,
+                  message,
+                  items: cart.map(item => {
+                    const product = findProduct(item.id);
+                    return {
+                      name: String(product?.name || ('Product ' + item.id)),
+                      size: String(item.size || 'One Size'),
+                      colour: String(item.colour || ''),
+                      quantity: Math.max(1, Number(item.quantity) || 1)
+                    };
+                  }),
+                  customer: {
+                    name: customer.name,
+                    phone: customer.phone,
+                    address: customer.address,
+                    pin: customer.pin
+                  },
+                  savedAt: Date.now()
+                }));
+              } catch (storageError) {
+                throw new Error('Payment is verified, but the WhatsApp message could not be prepared on this device. Please contact Jija Studio with order ' + verifiedOrderNumber + '.');
+              }
               saveCart([]);
-              say('Payment verified successfully. Opening WhatsApp. Please tap Send to share your order details with Jija Studio.');
-              openWhatsAppAfterPayment(message);
+              form.reset();
+              say('Payment verified successfully. Opening your order confirmation page…');
+              window.location.assign('order-confirmation.html?whatsapp=1&order=' + encodeURIComponent(verifiedOrderNumber));
               return;
             } catch (error) {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
