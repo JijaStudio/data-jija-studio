@@ -4,8 +4,8 @@
 const STORE_CONFIG = {
   storeName: 'Jija Studio',
   contactName: 'Sharvari Jadhav',
-  whatsappNumber: '918600761346', // Sharvari Jadhav — Jija Studio WhatsApp orders
-  phoneDisplay: '+91 86007 61346',
+  whatsappNumber: '918830903621', // Sharvari Jadhav — Jija Studio WhatsApp orders
+  phoneDisplay: '+91 88309 03621',
   upiId: 'yourname@upi', // PLACEHOLDER: replace with your verified UPI ID
   upiName: 'Jija Studio',
   currency: 'INR'
@@ -154,8 +154,8 @@ function applyAdminHomepageSettings() {
   const announcement = document.querySelector('[data-admin-announcement]');
   if (announcement && settings.announcement) announcement.textContent = settings.announcement;
   // Keep every storefront order and contact link routed to the verified Jija Studio order number.
-  STORE_CONFIG.whatsappNumber = '918600761346';
-  STORE_CONFIG.phoneDisplay = '+91 86007 61346';
+  STORE_CONFIG.whatsappNumber = '918830903621';
+  STORE_CONFIG.phoneDisplay = '+91 88309 03621';
   const hero = document.querySelector('.hero');
   if (hero && settings.heroTitle) {
     const h = hero.querySelector('h1');
@@ -374,7 +374,7 @@ function readWishlist(){try{return JSON.parse(localStorage.getItem(WISHLIST_KEY)
 function toggleWishlist(id){const ids=readWishlist();const next=ids.includes(String(id))?ids.filter(x=>x!==String(id)):[...ids,String(id)];try{localStorage.setItem(WISHLIST_KEY,JSON.stringify(next));}catch(error){showToast('Wishlist could not be saved in this browser.');console.warn('Wishlist could not be saved.',error);return;}updateCartCount();showToast(next.includes(String(id))?'Added to your wishlist':'Removed from your wishlist');}
 function renderWishlist(){const root=document.querySelector('#wishlist-products');if(!root)return;const ids=readWishlist();const items=ids.map(id=>findProduct(id)).filter(Boolean);if(!items.length){root.innerHTML='<p class="empty-state">Your wishlist is empty. Tap the heart on a product to save it here.</p>';return;}renderProducts(root,items);}
 function renderHomepageReviews(){const root=document.querySelector('#homepage-reviews');if(!root)return;let settings={};try{settings=JSON.parse(localStorage.getItem('jijaAdminSettings')||'{}')||{};}catch{}const reviews=Array.isArray(settings.reviews)?settings.reviews:[];root.innerHTML=reviews.length?reviews.map(r=>'<article class="review-card"><div class="review-stars" aria-label="'+Math.max(1,Math.min(5,Number(r.rating)||5))+' out of 5 stars">'+('★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5))))+('☆'.repeat(5-Math.max(1,Math.min(5,Number(r.rating)||5))))+'</div><h3>'+escapeHTML(r.name||'Customer')+'</h3><p>'+escapeHTML(r.text||'')+'</p></article>').join(''):'<p>No reviews published yet. We welcome your feedback!</p>';}
-function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'918600761346';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
+function setupWishlistAndReviews(){renderWishlist();renderHomepageReviews();window.addEventListener('jija:reviews-updated',renderHomepageReviews);const form=document.querySelector('#review-form');form?.addEventListener('submit',event=>{event.preventDefault();const data=new FormData(form);const name=String(data.get('reviewName')||'').trim(),rating=String(data.get('reviewRating')||'5'),text=String(data.get('reviewText')||'').trim();if(!name||!text)return;const message='Hello Jija Studio! I would like to submit a customer review.\\n\\nName: '+name+'\\nRating: '+rating+'/5\\nReview: '+text+'\\n\\nPlease review this feedback before publishing it.';const number=STORE_CONFIG.whatsappNumber||'918830903621';window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');const status=document.querySelector('#review-form-status');if(status)status.textContent='WhatsApp opened with your review. Send it to the store for review and publication.';form.reset();});}
 
 function setupHome() {
   setupHomepageAnimations();
