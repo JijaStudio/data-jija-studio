@@ -41,7 +41,7 @@
         <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3.2A12.6 12.6 0 0 0 5.1 22.1L3.4 28.6l6.7-1.7A12.7 12.7 0 1 0 16 3.2Zm0 22.9a10.2 10.2 0 0 1-5.2-1.4l-.4-.2-4 .0 1-3.8-.3-.4A10.2 10.2 0 1 1 16 26.1Zm5.6-7.6c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.1-.3.2-.6.1a8.4 8.4 0 0 1-2.5-1.5 9.4 9.4 0 0 1-1.7-2.1c-.2-.3 0-.4.1-.6l.5-.6c.2-.2.2-.3.3-.5s0-.4 0-.5-.7-1.7-1-2.3-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4s-1.1 1.1-1.1 2.7 1.1 3.1 1.3 3.3 2.2 3.4 5.4 4.7c.8.3 1.4.5 1.9.6.8.2 1.5.2 2 .1.6-.1 1.8-.7 2.1-1.4s.3-1.3.2-1.4-.3-.2-.6-.4Z"/></svg>
         <span>Send order details on WhatsApp</span>
       </button>
-      <a id="whatsapp-web-fallback" class="secondary-link" href="#" target="_blank" rel="noopener">If the app doesn't open, use WhatsApp Web</a>
+      <a id="whatsapp-web-fallback" class="secondary-link" href="#" target="_blank" rel="noopener">If you are on a computer, use WhatsApp Web</a>
       <p id="whatsapp-status" class="confirm-note" role="status" aria-live="polite">We'll open WhatsApp with your order message ready. Please tap Send in WhatsApp to notify Jija Studio.</p>
       <div class="order-detail"><h2>Order details</h2><div id="order-items"></div><p><strong>Total paid: <span id="total-paid">—</span></strong></p><p id="payment-ref" class="confirm-note"></p></div>
       <details><summary>Preview the message to Jija Studio</summary><pre id="message-preview" class="message-preview"></pre></details>
@@ -88,27 +88,28 @@
     const phone = "918830903621";
     const encoded = encodeURIComponent(handoff.message);
     const webUrl = "https://wa.me/" + phone + "?text=" + encoded;
-    const isAndroid = /Android/i.test(navigator.userAgent || "");
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "") ||
       (navigator.platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1);
-    const appUrl = isAndroid
-      ? "intent://send?phone=" + phone + "&text=" + encoded + "#Intent;scheme=whatsapp;action=android.intent.action.VIEW;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end"
-      : "whatsapp://send?phone=" + phone + "&text=" + encoded;
+    // Use WhatsApp's app scheme directly. Do not automatically redirect mobile customers to
+    // wa.me/WhatsApp Web if the browser blocks an automatic app launch.
+    const appUrl = "whatsapp://send?phone=" + phone + "&text=" + encoded;
     waFallback.href = webUrl;
+    waFallback.hidden = isMobile;
     waButton.addEventListener("click", () => {
-      waStatus.textContent = "Opening the WhatsApp app. If it doesn't open, use the WhatsApp Web link below.";
-      // The button click is a direct user gesture, allowing the browser to hand off to WhatsApp.
+      waStatus.textContent = "Opening the WhatsApp app with your order details. In WhatsApp, tap Send to notify Jija Studio.";
+      // This click is a real user action, which is the most reliable way for mobile browsers
+      // to open another app through its registered URL scheme.
       window.location.href = appUrl;
     });
-    // Best-effort auto-open after verified payment. Android's fallback points back to this
-    // confirmation screen (not to whatsapp.com), leaving the green button available if blocked.
+    // Try once automatically after payment verification. Browsers may block app launches
+    // on page load, so the large green app button remains available as a manual fallback.
     const autoKey = "jijaWhatsappAutoAttempted:" + String(handoff.orderNumber || id);
     if (isMobile && !sessionStorage.getItem(autoKey)) {
       sessionStorage.setItem(autoKey, "1");
-      waStatus.textContent = "Trying to open WhatsApp. If it doesn't open, tap the green WhatsApp button below.";
-      window.setTimeout(() => { window.location.href = appUrl; }, 500);
+      waStatus.textContent = "Trying to open the WhatsApp app. If it stays here, tap the green WhatsApp button below.";
+      window.setTimeout(() => { window.location.href = appUrl; }, 250);
     }
-    orderNote.textContent = "Your payment is confirmed. WhatsApp is optional but helps Jija Studio match your payment to the exact products and sizes.";
+    orderNote.textContent = "Your payment is confirmed. Your payment is confirmed. Tap the green WhatsApp button if the app did not open automatically. Your message is prepared for +91 88309 03621; please tap Send inside WhatsApp.";
   } else if (token && token.length >= 40) {
     try {
       const saved = JSON.parse(localStorage.getItem("jijaOrderTracks") || "[]");
