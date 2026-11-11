@@ -636,7 +636,7 @@ function setupCart() {
               saveCart([]);
               form.reset();
               say('Payment verified successfully. Opening your order confirmation page…');
-              window.location.assign('order-confirmation.html?whatsapp=1&order=' + encodeURIComponent(verifiedOrderNumber));
+              window.location.assign('order-confirmation.html?whatsapp=1&order=' + encodeURIComponent(verifiedOrderNumber) + '&v=wa-app-handoff-3');
               return;
             } catch (error) {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
