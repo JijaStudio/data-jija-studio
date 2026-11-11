@@ -197,9 +197,9 @@ $("forgot-password").addEventListener("click", async () => {
   const email = $("signin-email").value.trim();
   try {
     await accountApi().resetPassword(email);
-    sayLogin("If this email is registered, a password-reset link has been sent. Check your inbox and spam folder. Need help? Call Jija Studio at +91 86007 61346.");
+    sayLogin("If this email is registered, a password-reset link has been sent. Check your inbox and spam folder. Need help? Call Jija Studio at +91 88309 03621.");
   } catch (error) {
-    sayLogin((error.message || "Could not request a password reset.") + " For assistance, contact Jija Studio at +91 86007 61346.");
+    sayLogin((error.message || "Could not request a password reset.") + " For assistance, contact Jija Studio at +91 88309 03621.");
   }
 });
 
@@ -254,7 +254,7 @@ $("upgrade-account-form").addEventListener("submit", async event => {
   } catch (error) {
     const code = String(error.code || "");
     if (code.includes("email-already-in-use") || code.includes("credential-already-in-use")) {
-      $("upgrade-account-status").textContent = "That email already belongs to another account. Try a different email or contact Jija Studio at +91 86007 61346.";
+      $("upgrade-account-status").textContent = "That email already belongs to another account. Try a different email or contact Jija Studio at +91 88309 03621.";
     } else {
       $("upgrade-account-status").textContent = error.message || "Could not update your existing account. Please try again.";
     }
