@@ -568,9 +568,46 @@ function setupCart() {
               if (!verifyResponse.ok || verification.verified !== true) {
                 throw new Error(verification.error || 'Payment could not be verified yet. Please contact Jija Studio before retrying.');
               }
+              const orderLines = cart.map(item => {
+                const product = findProduct(item.id);
+                const size = String(item.size || 'One Size');
+                const colour = String(item.colour || '').trim();
+                const quantity = Math.max(1, Number(item.quantity) || 1);
+                return '• ' + String(product?.name || ('Product ' + item.id)) +
+                  '\n  Size: ' + size +
+                  (colour ? '\n  Colour: ' + colour : '') +
+                  '\n  Quantity: ' + quantity;
+              }).join('\n\n');
+              const verifiedOrderNumber = String(verification.orderNumber || orderData.orderNumber || orderData.internalOrderId);
+              const paymentId = String(paymentResponse.razorpay_payment_id || '');
+              const subtotalPaid = Number(orderData.summary?.subtotalPaise ?? 0) / 100;
+              const shippingPaid = Number(orderData.summary?.shippingPaise ?? Math.max(0, Number(orderData.amount || 0) - Number(orderData.summary?.subtotalPaise || 0))) / 100;
+              const totalPaid = Number(orderData.summary?.totalPaise ?? orderData.amount ?? 0) / 100;
+              const message = [
+                'Hello Jija Studio! I have successfully completed the online payment for my order. Please check the payment and confirm my order.',
+                '',
+                'ORDER NUMBER: ' + verifiedOrderNumber,
+                'RAZORPAY PAYMENT ID: ' + paymentId,
+                'PAYMENT STATUS: Verified successfully on the website',
+                '',
+                'ORDER ITEMS:',
+                orderLines,
+                '',
+                'Subtotal: ' + money(subtotalPaid),
+                'Delivery: ' + (shippingPaid === 0 ? 'FREE' : money(shippingPaid)),
+                'TOTAL PAID: ' + money(totalPaid),
+                '',
+                'CUSTOMER DETAILS:',
+                'Name: ' + customer.name,
+                'Contact number: ' + customer.phone,
+                'Delivery address: ' + customer.address,
+                'PIN code: ' + customer.pin,
+                '',
+                'Please confirm receipt of this order and share the next update. Thank you.'
+              ].join('\n');
               saveCart([]);
-              form.reset();
-              window.location.href = 'account.html?orders=1';
+              say('Payment verified successfully. Opening WhatsApp. Please tap Send to share your order details with Jija Studio.');
+              window.location.assign(whatsappLink(message));
               return;
             } catch (error) {
               say(error.message || 'Payment verification failed. Please contact Jija Studio before paying again.');
