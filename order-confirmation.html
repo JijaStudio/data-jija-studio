@@ -88,17 +88,20 @@
     const phone = "918830903621";
     const encoded = encodeURIComponent(handoff.message);
     const webUrl = "https://wa.me/" + phone + "?text=" + encoded;
-    const appUrl = "whatsapp://send?phone=" + phone + "&text=" + encoded;
+    const isAndroid = /Android/i.test(navigator.userAgent || "");
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "") ||
+      (navigator.platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1);
+    const appUrl = isAndroid
+      ? "intent://send?phone=" + phone + "&text=" + encoded + "#Intent;scheme=whatsapp;action=android.intent.action.VIEW;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end"
+      : "whatsapp://send?phone=" + phone + "&text=" + encoded;
     waFallback.href = webUrl;
     waButton.addEventListener("click", () => {
       waStatus.textContent = "Opening the WhatsApp app. If it doesn't open, use the WhatsApp Web link below.";
-      // This is a direct user gesture, which browsers are more likely to allow to open another app.
+      // The button click is a direct user gesture, allowing the browser to hand off to WhatsApp.
       window.location.href = appUrl;
     });
-    // Best-effort auto-open after payment. Do not redirect to the website if the scheme is blocked:
-    // leave the successful-payment page visible with a prominent button instead.
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "") ||
-      (navigator.platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1);
+    // Best-effort auto-open after verified payment. Android's fallback points back to this
+    // confirmation screen (not to whatsapp.com), leaving the green button available if blocked.
     const autoKey = "jijaWhatsappAutoAttempted:" + String(handoff.orderNumber || id);
     if (isMobile && !sessionStorage.getItem(autoKey)) {
       sessionStorage.setItem(autoKey, "1");
