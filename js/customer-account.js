@@ -236,7 +236,7 @@ $("profile-form").addEventListener("submit", async event => {
       await loadOrders();
     }
   } catch (error) { sayProfile(error.message || "Your profile could not be saved."); }
-  finally { button.disabled = false; }
+  finally { button.disabled = !(window.JijaIndiaAddress && window.JijaIndiaAddress.isVerified("profile")); }
 });
 $("refresh-orders").addEventListener("click", loadOrders);
 $("upgrade-account-form").addEventListener("submit", async event => {
