@@ -306,6 +306,7 @@
     widget.elements.village.addEventListener("change", () => {
       invalidate(widget);
       widget.otherVillage = widget.elements.village.value === "__other__";
+      widget.elements.villageOther.required = widget.otherVillage;
       if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = !widget.otherVillage;
       setStatus(widget, widget.otherVillage
         ? "Enter your town or locality name, then verify the PIN code."
@@ -328,6 +329,7 @@
         const street = safeString(widget.elements.street.value);
         const pin = safeString(widget.elements.pin.value);
         if (!state || !district || !taluka || !village) throw new Error("Select the state, district, taluka and village / locality first.");
+        if (widget.otherVillage && village.length < 2) throw new Error("Enter your town or locality name.");
         if (street.length < 5) throw new Error("Enter a complete street address, such as house number, street, area or landmark.");
         if (!/^[0-9]{6}$/.test(pin)) throw new Error("Enter a valid six-digit Indian PIN code.");
         setStatus(widget, "Checking PIN code against postal records…", true);
@@ -381,7 +383,7 @@
     widget.elements.taluka.disabled = true;
     widget.elements.village.disabled = true;
     setStatus(widget, "Loading India address list…", true);
-    loadStates(widget).catch(error => {
+    widget.statesReady = loadStates(widget).catch(error => {
       setStatus(widget, "Could not load the India location directory. Check your internet connection and reload the page. " + (error.message || ""), false);
     });
     updateSubmitButtons(widget);
@@ -394,8 +396,10 @@
     const parsed = parseAddress(address);
     widget.elements.street.value = parsed.street || "";
     widget.elements.pin.value = safeString(pin);
+    widget.verified = false;
     try {
-      // Ensure state data is loaded before attempting to restore dependent selects.
+      // Wait for the initial state list so restoration cannot race the first load.
+      if (widget.statesReady) await widget.statesReady;
       if (!widget.rows.state.length) {
         const payload = await getJson(LOCATION_API + "/states");
         widget.rows.state = getStateRows(payload);
@@ -434,14 +438,19 @@
       widget.rows.village = [...new Map(villageAll.map(item => [placeId(item, "village") || placeName(item, "village"), item])).values()];
       setOptions(widget.elements.village, widget.rows.village, "village", "Select village / locality");
       const villageOption = [...widget.elements.village.options].find(option => namesMatch(option.dataset.label, parsed.village));
-      if (villageOption) widget.elements.village.value = villageOption.value;
-      else {
+      if (villageOption) {
+        widget.elements.village.value = villageOption.value;
+        widget.otherVillage = false;
+        widget.elements.villageOther.required = false;
+        if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = true;
+      } else {
         const other = new Option("Urban town / locality not listed", "__other__");
         other.dataset.label = "Urban town / locality not listed";
         widget.elements.village.add(other);
         widget.elements.village.value = "__other__";
         widget.otherVillage = true;
         widget.elements.villageOther.value = parsed.village || "";
+        widget.elements.villageOther.required = true;
         if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = false;
       }
       invalidate(widget, "Saved address loaded. Click “Verify PIN & location” to confirm the postal code before saving.");
