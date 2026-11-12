@@ -46,13 +46,25 @@ async function signIn(email, password) {
   return result.user;
 }
 
-async function createAccount({ name, email, phone, password }) {
+async function createAccount({ name, email, phone, password, address, pin }) {
+  const normalizedAddress = String(address || "").trim();
+  const normalizedPin = String(pin || "").trim();
+  if (!normalizedAddress || !/^[0-9]{6}$/.test(normalizedPin)) {
+    throw new Error("Verify your delivery address and six-digit PIN code before creating your account.");
+  }
   const result = await createUserWithEmailAndPassword(auth, String(email || "").trim(), String(password || ""));
   if (name) await updateProfile(result.user, { displayName: String(name).trim() });
-  // Store the registration details immediately, so customers do not need to re-enter them.
+  // Save the postal-checked delivery address immediately with the customer profile.
   await api("/api/customer/profile", {
     method: "POST",
-    body: { name: String(name || "").trim(), email: String(email || "").trim(), phone: String(phone || "").trim(), address: "", pin: "" }
+    body: {
+      name: String(name || "").trim(),
+      email: String(email || "").trim(),
+      phone: String(phone || "").trim(),
+      address: normalizedAddress,
+      pin: normalizedPin,
+      addressVerified: true
+    }
   });
   return result.user;
 }
