@@ -104,9 +104,13 @@ async function loadProfile(user) {
     $("profile-name").value = profile?.name || user.displayName || "";
     $("profile-email").value = profile?.email || user.email || "";
     $("profile-phone").value = profile?.phone || user.phoneNumber || "";
-    $("profile-address").value = profile?.address || "";
-    $("profile-pin").value = profile?.pin || "";
-    sayProfile(profile ? "Your profile is saved." : "Add your name to finish setting up your account.");
+    const addressUi = window.JijaIndiaAddress;
+    if (addressUi) {
+      await addressUi.restore("profile", profile?.address || "", profile?.pin || "");
+    } else {
+      $("profile-status").textContent = "Address selector is still loading. Reload the page and try again.";
+    }
+    sayProfile(profile ? "Your profile is saved. Verify the PIN before saving any address changes." : "Add your name and verified delivery address to finish setting up your account.");
     await loadOrders();
     if (profile && returnTo === "cart.html" && !params.has("stay")) {
       $("profile-status").textContent = "Signed in. Taking you back to checkout…";
@@ -173,10 +177,14 @@ $("signup-form").addEventListener("submit", async event => {
     const phone = normalizeIndianPhone($("signup-phone").value);
     const password = $("signup-password").value;
     const confirm = $("signup-password-confirm").value;
+    const addressUi = window.JijaIndiaAddress;
+    if (!addressUi || !addressUi.isVerified("signup")) throw new Error("Verify your delivery address and PIN code before creating the account.");
+    const address = addressUi.getAddress("signup");
+    const pin = addressUi.getPin("signup");
     if (name.length < 2) throw new Error("Enter your full name.");
     if (password.length < 6) throw new Error("Use a password with at least 6 characters.");
     if (password !== confirm) throw new Error("The passwords do not match.");
-    const user = await accountApi().createAccount({ name, email, phone, password });
+    const user = await accountApi().createAccount({ name, email, phone, password, address, pin });
     $("signup-password").value = "";
     $("signup-password-confirm").value = "";
     sayLogin("Account created. Your details have been saved.");
@@ -190,7 +198,9 @@ $("signup-form").addEventListener("submit", async event => {
     } else {
       sayLogin(error.message || "Could not create your account. Please check your details.");
     }
-  } finally { button.disabled = false; }
+  } finally {
+    button.disabled = !(window.JijaIndiaAddress && window.JijaIndiaAddress.isVerified("signup"));
+  }
 });
 
 $("forgot-password").addEventListener("click", async () => {
@@ -212,9 +222,11 @@ $("profile-form").addEventListener("submit", async event => {
     const name = $("profile-name").value.trim();
     const email = $("profile-email").value.trim();
     const phone = normalizeIndianPhone($("profile-phone").value);
-    const address = $("profile-address").value.trim();
-    const pin = $("profile-pin").value.trim();
-    const data = await accountApi().api("/api/customer/profile", { method: "POST", body: { name, email, phone, address, pin } });
+    const addressUi = window.JijaIndiaAddress;
+    if (!addressUi || !addressUi.isVerified("profile")) throw new Error("Verify the delivery PIN code and location before saving your profile.");
+    const address = addressUi.getAddress("profile");
+    const pin = addressUi.getPin("profile");
+    const data = await accountApi().api("/api/customer/profile", { method: "POST", body: { name, email, phone, address, pin, addressVerified: true } });
     $("verified-phone").textContent = "Signed in as " + (auth.currentUser?.email || "") + " · " + (data.profile?.phone || auth.currentUser?.phoneNumber || phone);
     sayProfile("Profile saved successfully.");
     if (returnTo === "cart.html") {
@@ -236,13 +248,15 @@ $("upgrade-account-form").addEventListener("submit", async event => {
     const password = $("upgrade-password").value;
     const confirm = $("upgrade-password-confirm").value;
     if (password !== confirm) throw new Error("The passwords do not match.");
+    const addressUi = window.JijaIndiaAddress;
+    if (!addressUi || !addressUi.isVerified("profile")) throw new Error("Verify your delivery address and PIN code before linking email and password.");
     const user = await accountApi().upgradePhoneAccount({
       email: $("upgrade-email").value.trim(),
       password,
       name: $("profile-name").value.trim(),
       phone: $("profile-phone").value.trim() || auth.currentUser?.phoneNumber || "",
-      address: $("profile-address").value.trim(),
-      pin: $("profile-pin").value.trim()
+      address: addressUi.getAddress("profile"),
+      pin: addressUi.getPin("profile")
     });
     $("upgrade-password").value = "";
     $("upgrade-password-confirm").value = "";
