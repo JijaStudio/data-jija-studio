@@ -13,8 +13,8 @@
   const normalize = value => safeString(value)
     .toLocaleLowerCase("en-IN")
     .replace(/&/g, " and ")
-    .replace(/\\b(district|dist|taluka|taluk|tehsil|tehsil|subdistrict|sub-district)\\b/g, " ")
-    .replace(/[^\\p{L}\\p{N}]+/gu, "");
+    .replace(/\b(district|dist|taluka|taluk|tehsil|tehsil|subdistrict|sub-district)\b/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, "");
 
   const aliases = new Map([
     ["orissa", "odisha"], ["pondicherry", "puducherry"],
@@ -136,7 +136,7 @@
   function getField(widget, key) { return widget.elements[key]; }
 
   function buildAddress(widget) {
-    const street = safeString(getField(widget, "street").value).replace(/\\s*\\n\\s*/g, ", ");
+    const street = safeString(getField(widget, "street").value).replace(/\s*\n\s*/g, ", ");
     const village = widget.otherVillage ? safeString(getField(widget, "villageOther").value) : selectedLabel(widget, "village");
     const parts = [
       street ? "Street address: " + street : "",
@@ -151,9 +151,9 @@
 
   function parseAddress(address) {
     const parsed = { street: "", village: "", taluka: "", district: "", state: "" };
-    const lines = safeString(address).split(/\\r?\\n/);
+    const lines = safeString(address).split(/\r?\n/);
     for (const line of lines) {
-      const match = line.match(/^\\s*(Street address|Village\\s*\\/\\s*locality|Village|Taluka\\s*\\/\\s*sub-district|Taluka|District|State\\s*\\/\\s*UT|State)\\s*:\\s*(.*)\\s*$/i);
+      const match = line.match(/^\s*(Street address|Village\s*\/\s*locality|Village|Taluka\s*\/\s*sub-district|Taluka|District|State\s*\/\s*UT|State)\s*:\s*(.*)\s*$/i);
       if (!match) {
         if (!parsed.street && safeString(line)) parsed.street = safeString(line);
         continue;
@@ -350,7 +350,7 @@
           for (const [key, value] of Object.entries(villageRow)) {
             if (/pin(code)?s?$|postal.?code|post.?code/i.test(key)) {
               if (Array.isArray(value)) villagePins.push(...value.map(safeString));
-              else if (value !== null && value !== undefined) villagePins.push(...String(value).split(/[,;\\s]+/).map(safeString));
+              else if (value !== null && value !== undefined) villagePins.push(...String(value).split(/[,;\s]+/).map(safeString));
             }
           }
         }
