@@ -135,6 +135,7 @@
 <div class="form-group"><label for="profile-pin">PIN code *</label><input class="account-input" id="profile-pin" name="pin" inputmode="numeric" autocomplete="postal-code" required maxlength="6" pattern="[0-9]{6}" placeholder="6-digit PIN code"></div>
 <div class="form-group"><label for="profile-verify-address">&nbsp;</label><button class="button button-outline account-address-verify" id="profile-verify-address" type="button">Verify PIN &amp; location</button></div>
 <p class="account-status address-verify-status wide" id="profile-address-status" role="status" aria-live="polite">Verify your PIN code before saving your address.</p>
+<p class="account-note address-data-source wide">Location directory: <a href="https://www.voiceofvillage.com/developers" target="_blank" rel="noopener noreferrer">VoiceOfVillage (LGD data)</a>. PIN codes are checked against the postal directory; this does not confirm the exact house or street.</p>
 </div>
 <div class="order-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="button button-primary" id="save-profile" type="submit">Save profile</button><a id="continue-shopping" class="button button-outline" href="shop.html">Continue shopping</a></div>
 <p id="profile-status" class="account-status" role="status" aria-live="polite"></p>
