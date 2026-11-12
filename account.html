@@ -41,6 +41,19 @@
 .account-note a{color:#174d38;font-weight:700}
 
 @media(max-width:620px){.account-shell{margin-top:20px}.account-banner,.account-card{padding:18px}.account-form-grid{grid-template-columns:1fr}.account-form-grid .wide{grid-column:auto}}
+
+.address-section-heading{border-top:1px solid #e7e0d5;padding-top:14px;margin-top:4px}
+.address-section-heading .eyebrow{margin-bottom:4px}
+.address-section-heading .account-note{margin:0}
+.account-address-verify{width:100%;min-height:46px;margin:0}
+.account-address-verify:disabled,#signup-button:disabled,#save-profile:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.address-verify-status{font-size:13px;line-height:1.5;margin:0!important;padding:10px 12px;border-radius:9px;background:#f5f3ec;color:#5c6159}
+.address-verify-status.is-success{background:#eaf5ec;color:#1c6431}
+.address-verify-status.is-error{background:#fff4e7;color:#7b4b13}
+.address-data-source{font-size:12px;margin:8px 0 12px}
+.address-data-source a{color:#174d38;font-weight:700}
+#signup-form .account-form-grid{row-gap:14px}
+.form-group[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -72,10 +85,21 @@
     <div class="form-group"><label for="signup-name">Full name *</label><input class="account-input" id="signup-name" autocomplete="name" required maxlength="100" placeholder="Your full name"></div>
     <div class="form-group"><label for="signup-email">Email address *</label><input class="account-input" id="signup-email" type="email" autocomplete="email" required maxlength="160" placeholder="you@example.com"></div>
     <div class="form-group"><label for="signup-phone">Mobile number *</label><input class="account-input" id="signup-phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+91 98765 43210"></div>
+    <div class="form-group wide address-section-heading"><p class="eyebrow">DELIVERY ADDRESS</p><p class="account-note">Select your location in order: State / UT → District → Taluka → Village / locality. Then enter your street address and verify the six-digit PIN code.</p></div>
+    <div class="form-group"><label for="signup-state">State / Union Territory *</label><select class="account-input" id="signup-state" required><option value="">Loading states…</option></select></div>
+    <div class="form-group"><label for="signup-district">District *</label><select class="account-input" id="signup-district" required disabled><option value="">Select state first</option></select></div>
+    <div class="form-group"><label for="signup-taluka">Taluka / sub-district *</label><select class="account-input" id="signup-taluka" required disabled><option value="">Select district first</option></select></div>
+    <div class="form-group"><label for="signup-village">Village / locality *</label><select class="account-input" id="signup-village" required disabled><option value="">Select taluka first</option></select></div>
+    <div class="form-group wide" id="signup-village-other-wrap" hidden><label for="signup-village-other">Town / locality name *</label><input class="account-input" id="signup-village-other" maxlength="120" placeholder="Enter your town or locality"></div>
+    <div class="form-group wide"><label for="signup-street">Street address / house number / landmark *</label><textarea class="account-input" id="signup-street" required rows="3" maxlength="400" placeholder="House / flat number, street, area, nearby landmark"></textarea></div>
+    <div class="form-group"><label for="signup-pin">PIN code *</label><input class="account-input" id="signup-pin" inputmode="numeric" autocomplete="postal-code" required maxlength="6" pattern="[0-9]{6}" placeholder="6-digit PIN code"></div>
+    <div class="form-group"><label for="signup-verify-address">&nbsp;</label><button class="button button-outline account-address-verify" id="signup-verify-address" type="button">Verify PIN &amp; location</button></div>
+    <p class="account-status address-verify-status wide" id="signup-address-status" role="status" aria-live="polite">Verify your PIN code before creating your account.</p>
     <div class="form-group"><label for="signup-password">Create password *</label><input class="account-input" id="signup-password" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters"></div>
-    <div class="form-group wide"><label for="signup-password-confirm">Confirm password *</label><input class="account-input" id="signup-password-confirm" type="password" autocomplete="new-password" required minlength="6" placeholder="Enter the same password again"></div>
+    <div class="form-group"><label for="signup-password-confirm">Confirm password *</label><input class="account-input" id="signup-password-confirm" type="password" autocomplete="new-password" required minlength="6" placeholder="Enter the same password again"></div>
   </div>
-  <button class="button button-primary account-login-button" id="signup-button" type="submit">Create account and save details</button>
+  <p class="account-note address-data-source">Location directory: <a href="https://www.voiceofvillage.com/developers" target="_blank" rel="noopener noreferrer">VoiceOfVillage (LGD data)</a>. PIN codes are checked against the postal directory; this does not confirm the exact house or street.</p>
+  <button class="button button-primary account-login-button" id="signup-button" type="submit" disabled>Create account and save details</button>
 </form>
 <p id="login-status" class="account-status" role="status" aria-live="polite"></p>
 <p class="account-note">Forgot your password? Use “Forgot password?” above to request an email reset link. If you need personal assistance, contact our help line at <a href="tel:+918830903621">+91 88309 03621</a>.</p>
@@ -101,8 +125,16 @@
 <div class="form-group"><label for="profile-name">Full name *</label><input class="account-input" id="profile-name" name="name" autocomplete="name" required maxlength="100" placeholder="Your full name"></div>
 <div class="form-group"><label for="profile-email">Email address *</label><input class="account-input" id="profile-email" name="email" type="email" autocomplete="email" maxlength="160" required placeholder="you@example.com"></div>
 <div class="form-group"><label for="profile-phone">Mobile number *</label><input class="account-input" id="profile-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+91 98765 43210"></div>
-<div class="form-group wide"><label for="profile-address">Default delivery address</label><textarea class="account-input" id="profile-address" name="address" autocomplete="street-address" rows="3" maxlength="600" placeholder="House, street, area, city, state"></textarea></div>
-<div class="form-group"><label for="profile-pin">Default PIN code</label><input class="account-input" id="profile-pin" name="pin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit PIN code"></div>
+<div class="form-group wide address-section-heading"><p class="eyebrow">DELIVERY ADDRESS</p><p class="account-note">Select your location in order: State / UT → District → Taluka → Village / locality. Then enter the street address and verify the PIN before saving.</p></div>
+<div class="form-group"><label for="profile-state">State / Union Territory *</label><select class="account-input" id="profile-state" required><option value="">Loading states…</option></select></div>
+<div class="form-group"><label for="profile-district">District *</label><select class="account-input" id="profile-district" required disabled><option value="">Select state first</option></select></div>
+<div class="form-group"><label for="profile-taluka">Taluka / sub-district *</label><select class="account-input" id="profile-taluka" required disabled><option value="">Select district first</option></select></div>
+<div class="form-group"><label for="profile-village">Village / locality *</label><select class="account-input" id="profile-village" required disabled><option value="">Select taluka first</option></select></div>
+<div class="form-group wide" id="profile-village-other-wrap" hidden><label for="profile-village-other">Town / locality name *</label><input class="account-input" id="profile-village-other" maxlength="120" placeholder="Enter your town or locality"></div>
+<div class="form-group wide"><label for="profile-street">Street address / house number / landmark *</label><textarea class="account-input" id="profile-street" required autocomplete="street-address" rows="3" maxlength="400" placeholder="House / flat number, street, area, nearby landmark"></textarea></div>
+<div class="form-group"><label for="profile-pin">PIN code *</label><input class="account-input" id="profile-pin" name="pin" inputmode="numeric" autocomplete="postal-code" required maxlength="6" pattern="[0-9]{6}" placeholder="6-digit PIN code"></div>
+<div class="form-group"><label for="profile-verify-address">&nbsp;</label><button class="button button-outline account-address-verify" id="profile-verify-address" type="button">Verify PIN &amp; location</button></div>
+<p class="account-status address-verify-status wide" id="profile-address-status" role="status" aria-live="polite">Verify your PIN code before saving your address.</p>
 </div>
 <div class="order-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="button button-primary" id="save-profile" type="submit">Save profile</button><a id="continue-shopping" class="button button-outline" href="shop.html">Continue shopping</a></div>
 <p id="profile-status" class="account-status" role="status" aria-live="polite"></p>
@@ -116,6 +148,7 @@
 </main>
 <footer class="site-footer"><div class="container footer-bottom"><span>© <span data-year></span> Jija Studio. All rights reserved.</span><span><a href="contact.html">Contact us</a> · <a href="index.html#wishlist-section">Your favourites</a></span></div></footer>
 <script src="js/products.js"></script><script src="js/main.js?v=whatsapp-direct-app-4"></script>
-<script type="module" src="js/customer-auth.js?v=email-password-2"></script>
-<script type="module" src="js/customer-account.js?v=paid-orders-contact-8830903621"></script>
+<script type="module" src="js/india-address.js?v=india-post-pin-verification-1"></script>
+<script type="module" src="js/customer-auth.js?v=email-password-address-1"></script>
+<script type="module" src="js/customer-account.js?v=address-verification-1"></script>
 </body></html>
