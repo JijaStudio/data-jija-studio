@@ -73,26 +73,74 @@
     return findList(payload);
   }
 
-  function placeName(item, level) {
-    const keys = level === "state"
-      ? ["name", "state_name", "stateName", "english_name", "name_en", "title"]
-      : level === "district"
-        ? ["name", "district_name", "districtName", "english_name", "name_en", "title"]
-        : level === "taluka"
-          ? ["name", "mandal_name", "subdistrict_name", "sub_district_name", "tehsil_name", "taluka_name", "taluk_name", "english_name", "name_en", "title"]
-          : ["name", "village_name", "villageName", "village_name_english", "village_english_name", "village", "revenue_village_name", "office_name", "officeName", "post_office_name", "english_name", "name_en", "title"];
-    for (const key of keys) if (safeString(item?.[key])) return safeString(item[key]);
+  function primitiveText(value) {
+    if (typeof value === "string") return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
     return "";
   }
+
+  function nestedText(value, preferredKeys, depth = 0, seen = new Set()) {
+    const primitive = primitiveText(value);
+    if (primitive) return primitive;
+    if (!value || typeof value !== "object" || depth > 5 || seen.has(value)) return "";
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const text = nestedText(item, preferredKeys, depth + 1, seen);
+        if (text) return text;
+      }
+      return "";
+    }
+
+    // Village API records sometimes wrap localized names in an object, e.g.
+    // name: { en: "Example Village", local: "..." }. Never pass an object
+    // directly to Option(), since that would render as "[object Object]".
+    for (const key of preferredKeys) {
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        const text = nestedText(value[key], preferredKeys, depth + 1, seen);
+        if (text) return text;
+      }
+    }
+    return "";
+  }
+
+  function placeName(item, level) {
+    const keys = level === "state"
+      ? ["name", "state_name", "stateName", "state_name_english", "english_name", "name_en", "title", "label", "value"]
+      : level === "district"
+        ? ["name", "district_name", "districtName", "district_name_english", "english_name", "name_en", "title", "label", "value"]
+        : level === "taluka"
+          ? ["name", "mandal_name", "mandalName", "subdistrict_name", "sub_district_name", "tehsil_name", "taluka_name", "taluk_name", "name_english", "english_name", "name_en", "title", "label", "value"]
+          : ["village_name", "villageName", "village_name_english", "village_english_name", "name_english", "english_name", "name_en", "office_name", "officeName", "post_office_name", "revenue_village_name", "village", "name", "title", "label", "value"];
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(item || {}, key)) continue;
+      const value = item[key];
+      const text = nestedText(value, [
+        "en", "english", "english_name", "englishName", "name_en", "nameEn",
+        "village_name_english", "villageNameEnglish", "village_name", "villageName",
+        "district_name", "districtName", "state_name", "stateName",
+        "display_name", "displayName", "label", "value", "text", "title", "name"
+      ]);
+      if (text && text !== "[object Object]") return text;
+    }
+    return "";
+  }
+
   function placeId(item, level) {
     const keys = level === "state"
-      ? ["slug", "id", "state_id", "lgd_code", "code", "name"]
+      ? ["lgd_code", "state_id", "state_code", "id", "code", "slug", "name"]
       : level === "district"
-        ? ["id", "district_id", "lgd_code", "district_code", "code", "slug", "name"]
+        ? ["lgd_code", "district_id", "district_code", "id", "code", "slug", "name"]
         : level === "taluka"
-          ? ["id", "mandal_id", "subdistrict_id", "sub_district_id", "lgd_code", "code", "slug", "name"]
-          : ["id", "lgd_code", "village_lgd_code", "lgdCode", "village_id", "village_code", "code", "slug", "name"];
-    for (const key of keys) if (item?.[key] !== undefined && item?.[key] !== null && safeString(item[key])) return safeString(item[key]);
+          ? ["lgd_code", "mandal_id", "subdistrict_id", "sub_district_id", "taluka_id", "tehsil_id", "id", "code", "slug", "name"]
+          : ["lgd_code", "village_lgd_code", "lgdCode", "village_id", "village_code", "id", "code", "slug", "name"];
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(item || {}, key)) continue;
+      const value = item[key];
+      const text = nestedText(value, ["lgd_code", "lgd", "id", "code", "value", "slug"]);
+      if (text && text !== "[object Object]") return text;
+    }
     return placeName(item, level);
   }
 
