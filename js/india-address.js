@@ -206,6 +206,50 @@
     const row = selectedRow(widget, level);
     return row ? placeName(row, level) : "";
   }
+  function selectedTalukaName(widget) {
+    return widget.otherTaluka ? safeString(widget.elements.talukaOther.value) : selectedLabel(widget, "taluka");
+  }
+  function resetManualTaluka(widget) {
+    widget.otherTaluka = false;
+    if (widget.elements.talukaOther) {
+      widget.elements.talukaOther.value = "";
+      widget.elements.talukaOther.required = false;
+    }
+    if (widget.elements.talukaOtherWrap) widget.elements.talukaOtherWrap.hidden = true;
+  }
+  function appendTalukaManualOption(widget) {
+    const select = widget.elements.taluka;
+    if (![...select.options].some(option => option.value === "__other__")) {
+      const other = new Option("Taluka / sub-district not listed — enter manually", "__other__");
+      other.dataset.label = "Taluka / sub-district not listed — enter manually";
+      select.add(other);
+    }
+    select.disabled = false;
+  }
+  function prepareManualVillageOption(widget) {
+    widget.rows.village = [];
+    const select = widget.elements.village;
+    select.replaceChildren(new Option("Select village / locality", ""));
+    const manual = new Option("Village / locality not listed — enter manually", "__other__");
+    manual.dataset.label = "Village / locality not listed — enter manually";
+    select.add(manual);
+    select.disabled = false;
+    widget.otherVillage = false;
+    widget.elements.villageOther.value = "";
+    widget.elements.villageOther.required = false;
+    if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = true;
+  }
+  function showTalukaFallback(widget, error) {
+    widget.rows.taluka = [];
+    widget.rows.village = [];
+    setOptions(widget.elements.taluka, [], "taluka", "Taluka list unavailable");
+    appendTalukaManualOption(widget);
+    widget.elements.village.replaceChildren(new Option("Select taluka first", ""));
+    widget.elements.village.disabled = true;
+    resetManualTaluka(widget);
+    setStatus(widget, (error?.message || "Some talukas may be missing from the location directory.") +
+      " Choose “Taluka / sub-district not listed — enter manually” to type the missing name.", false);
+  }
   function invalidate(widget, message = "Address changed. Verify the PIN code again before continuing.") {
     widget.verified = false;
     const status = widget.elements.status;
@@ -236,7 +280,7 @@
     const parts = [
       street ? "Street address: " + street : "",
       village ? "Village / locality: " + village : "",
-      selectedLabel(widget, "taluka") ? "Taluka / sub-district: " + selectedLabel(widget, "taluka") : "",
+      selectedTalukaName(widget) ? "Taluka / sub-district: " + selectedTalukaName(widget) : "",
       selectedLabel(widget, "district") ? "District: " + selectedLabel(widget, "district") : "",
       selectedLabel(widget, "state") ? "State / UT: " + selectedLabel(widget, "state") : "",
       "Country: India"
@@ -292,6 +336,7 @@
   async function loadDistricts(widget, wantedName = "") {
     const state = selectedRow(widget, "state");
     widget.rows.district = []; widget.rows.taluka = []; widget.rows.village = [];
+    resetManualTaluka(widget);
     await fillSelect(widget, "district", [], "Loading districts…");
     await fillSelect(widget, "taluka", [], "Select taluka / sub-district");
     await fillSelect(widget, "village", [], "Select village / locality");
@@ -308,16 +353,22 @@
   async function loadTalukas(widget, wantedName = "") {
     const district = selectedRow(widget, "district");
     widget.rows.taluka = []; widget.rows.village = [];
+    resetManualTaluka(widget);
     await fillSelect(widget, "taluka", [], "Loading talukas / sub-districts…");
     await fillSelect(widget, "village", [], "Select village / locality");
     if (!district) return;
     const id = placeId(district, "district");
     const payload = await getJson(LOCATION_API + "/districts/" + encodeURIComponent(id) + "/mandals");
     const rows = getTalukaRows(payload);
-    if (!rows.length) throw new Error("Talukas / sub-districts are not available for this district at the moment.");
-    await fillSelect(widget, "taluka", rows, "Select taluka / sub-district", wantedName);
-    if (widget.elements.taluka.value) await loadVillages(widget, "");
-    else setStatus(widget, "Now select your taluka / sub-district.", true);
+    await fillSelect(widget, "taluka", rows, rows.length ? "Select taluka / sub-district" : "No talukas found", wantedName);
+    appendTalukaManualOption(widget);
+    if (widget.elements.taluka.value && widget.elements.taluka.value !== "__other__") {
+      await loadVillages(widget, "");
+    } else if (!rows.length) {
+      setStatus(widget, "No taluka records were returned for this district. Choose the manual option and enter the taluka / sub-district name.", false);
+    } else {
+      setStatus(widget, "Select your taluka / sub-district. If it is missing, choose the manual-entry option.", true);
+    }
   }
 
   function showVillageFallback(widget, error) {
@@ -379,13 +430,14 @@
   function bindWidget(prefix) {
     if (widgets.has(prefix)) return widgets.get(prefix);
     const $ = suffix => document.getElementById(prefix + "-" + suffix);
-    const names = ["state","district","taluka","village","village-other","street","pin","verify-address","address-status"];
+    const names = ["state","district","taluka","taluka-other","village","village-other","street","pin","verify-address","address-status"];
     const widget = {
-      prefix, verified: false, loading: false, otherVillage: false,
+      prefix, verified: false, loading: false, otherTaluka: false, otherVillage: false,
       rows: { state: [], district: [], taluka: [], village: [] },
       elements: {
-        state: $("state"), district: $("district"), taluka: $("taluka"), village: $("village"),
-        villageOther: $("village-other"), villageOtherWrap: $( "village-other-wrap" ),
+        state: $("state"), district: $("district"), taluka: $("taluka"),
+        talukaOther: $("taluka-other"), talukaOtherWrap: $("taluka-other-wrap"),
+        village: $("village"), villageOther: $("village-other"), villageOtherWrap: $("village-other-wrap"),
         street: $("street"), pin: $("pin"), verify: $("verify-address"), status: $("address-status")
       }
     };
@@ -394,6 +446,7 @@
 
     widget.elements.state.addEventListener("change", async () => {
       invalidate(widget);
+      resetManualTaluka(widget);
       widget.otherVillage = false;
       if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = true;
       try { await loadDistricts(widget); setStatus(widget, "Select a district, taluka and village.", true); }
@@ -401,13 +454,25 @@
     });
     widget.elements.district.addEventListener("change", async () => {
       invalidate(widget);
+      resetManualTaluka(widget);
       try { await loadTalukas(widget); }
-      catch (error) { setStatus(widget, error.message || "Could not load talukas. Please try again."); }
+      catch (error) { showTalukaFallback(widget, error); }
     });
     widget.elements.taluka.addEventListener("change", async () => {
       invalidate(widget);
+      widget.otherTaluka = widget.elements.taluka.value === "__other__";
+      widget.elements.talukaOther.required = widget.otherTaluka;
+      if (widget.elements.talukaOtherWrap) widget.elements.talukaOtherWrap.hidden = !widget.otherTaluka;
       widget.otherVillage = false;
+      widget.elements.villageOther.value = "";
+      widget.elements.villageOther.required = false;
       if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = true;
+      if (widget.otherTaluka) {
+        prepareManualVillageOption(widget);
+        setStatus(widget, "Enter your missing taluka / sub-district name, then choose the manual village / locality option.", true);
+        return;
+      }
+      resetManualTaluka(widget);
       try { await loadVillages(widget); }
       catch (error) { showVillageFallback(widget, error); }
     });
@@ -426,7 +491,7 @@
         ? "Enter your town or locality name, then verify the PIN code."
         : "Village selected. Enter the street address and PIN code, then verify.", true);
     });
-    ["villageOther","street","pin"].forEach(key => {
+    ["talukaOther","villageOther","street","pin"].forEach(key => {
       widget.elements[key].addEventListener("input", () => invalidate(widget));
     });
     widget.elements.verify.addEventListener("click", async () => {
@@ -438,11 +503,12 @@
       try {
         const state = selectedLabel(widget, "state");
         const district = selectedLabel(widget, "district");
-        const taluka = selectedLabel(widget, "taluka");
+        const taluka = selectedTalukaName(widget);
         const village = widget.otherVillage ? safeString(widget.elements.villageOther.value) : selectedLabel(widget, "village");
         const street = safeString(widget.elements.street.value);
         const pin = safeString(widget.elements.pin.value);
         if (!state || !district || !taluka || !village) throw new Error("Select the state, district, taluka and village / locality first.");
+        if (widget.otherTaluka && taluka.length < 2) throw new Error("Enter your taluka / sub-district name.");
         if (widget.otherVillage && village.length < 2) throw new Error("Enter your town or locality name.");
         if (street.length < 5) throw new Error("Enter a complete street address, such as house number, street, area or landmark.");
         if (!/^[0-9]{6}$/.test(pin)) throw new Error("Enter a valid six-digit Indian PIN code.");
@@ -536,9 +602,28 @@
       const talukaPayload = await getJson(LOCATION_API + "/districts/" + encodeURIComponent(widget.elements.district.value) + "/mandals");
       widget.rows.taluka = getTalukaRows(talukaPayload);
       setOptions(widget.elements.taluka, widget.rows.taluka, "taluka", "Select taluka / sub-district");
-      const talukaOption = [...widget.elements.taluka.options].find(option => namesMatch(option.dataset.label, parsed.taluka));
-      if (!talukaOption) { invalidate(widget, "Address loaded. Select your taluka and verify the PIN code."); return; }
+      appendTalukaManualOption(widget);
+      const talukaOption = [...widget.elements.taluka.options].find(option => option.value !== "__other__" && namesMatch(option.dataset.label, parsed.taluka));
+      if (!talukaOption) {
+        widget.elements.taluka.value = "__other__";
+        widget.otherTaluka = true;
+        widget.elements.talukaOther.value = parsed.taluka || "";
+        widget.elements.talukaOther.required = true;
+        if (widget.elements.talukaOtherWrap) widget.elements.talukaOtherWrap.hidden = false;
+        prepareManualVillageOption(widget);
+        widget.elements.village.value = "__other__";
+        widget.otherVillage = true;
+        widget.elements.villageOther.value = parsed.village || "";
+        widget.elements.villageOther.required = true;
+        if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = false;
+        invalidate(widget, "Saved address loaded with a taluka not found in the directory. Confirm the name and verify the PIN code before saving.");
+        return;
+      }
       widget.elements.taluka.value = talukaOption.value;
+      widget.otherTaluka = false;
+      widget.elements.talukaOther.value = "";
+      widget.elements.talukaOther.required = false;
+      if (widget.elements.talukaOtherWrap) widget.elements.talukaOtherWrap.hidden = true;
       const villageAll = [];
       for (let page = 1; page <= MAX_VILLAGE_PAGES; page++) {
         const payload = await getJson(LOCATION_API + "/mandals/" + encodeURIComponent(widget.elements.taluka.value) + "/villages?page=" + page);
@@ -595,7 +680,7 @@
       return {
         state: selectedLabel(widget, "state"),
         district: selectedLabel(widget, "district"),
-        taluka: selectedLabel(widget, "taluka"),
+        taluka: selectedTalukaName(widget),
         village: widget.otherVillage ? safeString(widget.elements.villageOther.value) : selectedLabel(widget, "village"),
         street: safeString(widget.elements.street.value),
         pin: safeString(widget.elements.pin.value),
