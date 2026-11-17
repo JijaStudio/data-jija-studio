@@ -31,20 +31,46 @@
   }
 
   function objectList(payload, keys) {
-    if (Array.isArray(payload)) return payload.filter(v => v && typeof v === "object");
-    const root = payload?.data ?? payload?.result ?? payload;
-    if (Array.isArray(root)) return root.filter(v => v && typeof v === "object");
-    if (root && typeof root === "object") {
-      for (const key of keys) {
-        if (Array.isArray(root[key])) return root[key].filter(v => v && typeof v === "object");
-      }
-      for (const value of Object.values(root)) {
-        if (Array.isArray(value) && value.some(v => v && typeof v === "object" && ("name" in v || "village_name" in v || "office_name" in v))) {
-          return value.filter(v => v && typeof v === "object");
+    const isRecord = value => value && typeof value === "object" && !Array.isArray(value);
+    const cleanRows = value => Array.isArray(value) ? value.filter(isRecord) : [];
+    if (Array.isArray(payload)) return cleanRows(payload);
+
+    // API responses can wrap lists in data/result/pagination envelopes. Search
+    // the whole payload, not only one wrapper level, before treating it as empty.
+    const wanted = new Set(keys.map(key => key.toLowerCase()));
+    const seen = new Set();
+    function findList(node, depth = 0) {
+      if (!isRecord(node) || depth > 8 || seen.has(node)) return [];
+      seen.add(node);
+      for (const [key, value] of Object.entries(node)) {
+        if (wanted.has(key.toLowerCase()) && Array.isArray(value)) {
+          const rows = cleanRows(value);
+          if (rows.length || value.length === 0) return rows;
         }
       }
+      const priority = ["data", "result", "response", "payload", "items", "records"];
+      for (const key of priority) {
+        if (isRecord(node[key])) {
+          const rows = findList(node[key], depth + 1);
+          if (rows.length) return rows;
+        } else if (Array.isArray(node[key])) {
+          const rows = cleanRows(node[key]);
+          if (rows.length) return rows;
+        }
+      }
+      for (const [key, value] of Object.entries(node)) {
+        if (priority.includes(key.toLowerCase())) continue;
+        if (isRecord(value)) {
+          const rows = findList(value, depth + 1);
+          if (rows.length) return rows;
+        } else if (Array.isArray(value)) {
+          const rows = cleanRows(value);
+          if (rows.some(item => ["name", "village_name", "villageName", "office_name", "subdistrict_name", "mandal_name"].some(field => field in item))) return rows;
+        }
+      }
+      return [];
     }
-    return [];
+    return findList(payload);
   }
 
   function placeName(item, level) {
@@ -65,20 +91,39 @@
         ? ["id", "district_id", "lgd_code", "district_code", "code", "slug", "name"]
         : level === "taluka"
           ? ["id", "mandal_id", "subdistrict_id", "sub_district_id", "lgd_code", "code", "slug", "name"]
-          : ["id", "lgd_code", "village_id", "village_code", "code", "slug", "name"];
+          : ["id", "lgd_code", "village_lgd_code", "village_id", "village_code", "code", "slug", "name"];
     for (const key of keys) if (item?.[key] !== undefined && item?.[key] !== null && safeString(item[key])) return safeString(item[key]);
     return placeName(item, level);
   }
 
   async function getJson(url) {
     if (requestCache.has(url)) return requestCache.get(url);
-    const pending = fetch(url, { headers: { "Accept": "application/json" }, cache: "force-cache" })
-      .then(async response => {
+    const pending = (async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(url, {
+          headers: { "Accept": "application/json" },
+          cache: "force-cache",
+          signal: controller.signal
+        });
         const data = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(data?.detail || data?.message || data?.error || "Location service returned HTTP " + response.status + ".");
+        if (!response.ok) {
+          const message = data?.detail || data?.message || data?.error;
+          if (response.status === 429) {
+            throw new Error("The village directory is temporarily rate-limited. Retry in a little while, or use the manual locality option.");
+          }
+          throw new Error(message || "Location service returned HTTP " + response.status + ".");
+        }
         if (!data) throw new Error("The location service returned an unreadable response.");
         return data;
-      });
+      } catch (error) {
+        if (error?.name === "AbortError") throw new Error("The village directory took too long to respond. Please retry or enter the locality manually.");
+        throw error;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })();
     requestCache.set(url, pending);
     try { return await pending; }
     catch (error) { requestCache.delete(url); throw error; }
@@ -225,6 +270,24 @@
     else setStatus(widget, "Now select your taluka / sub-district.", true);
   }
 
+  function showVillageFallback(widget, error) {
+    widget.rows.village = [];
+    widget.otherVillage = false;
+    const select = widget.elements.village;
+    select.replaceChildren(new Option("Village list unavailable — choose an option", ""));
+    const retry = new Option("↻ Retry loading villages", "__retry__");
+    retry.dataset.label = "Retry loading villages";
+    select.add(retry);
+    const manual = new Option("Village / town not listed — enter manually", "__other__");
+    manual.dataset.label = "Village / town not listed — enter manually";
+    select.add(manual);
+    select.disabled = false;
+    widget.elements.villageOther.required = false;
+    if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = true;
+    setStatus(widget, (error?.message || "Could not load villages.") +
+      " You can retry, or choose the manual locality option and verify the PIN code.", false);
+  }
+
   async function loadVillages(widget, wantedName = "") {
     const taluka = selectedRow(widget, "taluka");
     widget.rows.village = [];
@@ -301,10 +364,16 @@
       widget.otherVillage = false;
       if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = true;
       try { await loadVillages(widget); }
-      catch (error) { setStatus(widget, error.message || "Could not load villages. Please try again."); }
+      catch (error) { showVillageFallback(widget, error); }
     });
-    widget.elements.village.addEventListener("change", () => {
+    widget.elements.village.addEventListener("change", async () => {
       invalidate(widget);
+      if (widget.elements.village.value === "__retry__") {
+        widget.otherVillage = false;
+        try { await loadVillages(widget); }
+        catch (error) { showVillageFallback(widget, error); }
+        return;
+      }
       widget.otherVillage = widget.elements.village.value === "__other__";
       widget.elements.villageOther.required = widget.otherVillage;
       if (widget.elements.villageOtherWrap) widget.elements.villageOtherWrap.hidden = !widget.otherVillage;
