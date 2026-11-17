@@ -80,7 +80,7 @@
         ? ["name", "district_name", "districtName", "english_name", "name_en", "title"]
         : level === "taluka"
           ? ["name", "mandal_name", "subdistrict_name", "sub_district_name", "tehsil_name", "taluka_name", "taluk_name", "english_name", "name_en", "title"]
-          : ["name", "village_name", "village", "revenue_village_name", "english_name", "name_en", "title"];
+          : ["name", "village_name", "villageName", "village_name_english", "village_english_name", "village", "revenue_village_name", "office_name", "officeName", "post_office_name", "english_name", "name_en", "title"];
     for (const key of keys) if (safeString(item?.[key])) return safeString(item[key]);
     return "";
   }
@@ -91,7 +91,7 @@
         ? ["id", "district_id", "lgd_code", "district_code", "code", "slug", "name"]
         : level === "taluka"
           ? ["id", "mandal_id", "subdistrict_id", "sub_district_id", "lgd_code", "code", "slug", "name"]
-          : ["id", "lgd_code", "village_lgd_code", "village_id", "village_code", "code", "slug", "name"];
+          : ["id", "lgd_code", "village_lgd_code", "lgdCode", "village_id", "village_code", "code", "slug", "name"];
     for (const key of keys) if (item?.[key] !== undefined && item?.[key] !== null && safeString(item[key])) return safeString(item[key]);
     return placeName(item, level);
   }
@@ -308,15 +308,7 @@
     }
     const deduped = [...new Map(all.map(item => [placeId(item, "village") || placeName(item, "village"), item])).values()];
     if (!deduped.length) {
-      await fillSelect(widget, "village", [], "Select village / locality");
-      // Urban addresses may not appear in rural village lists; let the customer
-      // provide a locality label while the postal check still validates PIN/state/district.
-      const option = new Option("Urban town / locality not listed", "__other__");
-      option.dataset.label = "Urban town / locality not listed";
-      getField(widget, "village").add(option);
-      getField(widget, "village").disabled = false;
-      if (getField(widget, "villageOtherWrap")) getField(widget, "villageOtherWrap").hidden = true;
-      setStatus(widget, "No villages were listed for this taluka. Choose the urban/locality option and enter the place name.", true);
+      showVillageFallback(widget, new Error("The location service returned no village records for this taluka."));
       return;
     }
     await fillSelect(widget, "village", deduped, "Select village / locality", wantedName);
@@ -524,6 +516,7 @@
       }
       invalidate(widget, "Saved address loaded. Click “Verify PIN & location” to confirm the postal code before saving.");
     } catch (error) {
+      showVillageFallback(widget, error);
       invalidate(widget, "Saved address loaded, but location choices could not be restored. Select them again and verify the PIN. " + (error.message || ""));
     }
   }
