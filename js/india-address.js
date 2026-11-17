@@ -136,6 +136,7 @@
 
   function setOptions(select, rows, level, placeholder) {
     select.replaceChildren(new Option(placeholder, ""));
+    let added = 0;
     rows.forEach(item => {
       const label = placeName(item, level);
       const id = placeId(item, level);
@@ -143,8 +144,9 @@
       const option = new Option(label, id);
       option.dataset.label = label;
       select.add(option);
+      added += 1;
     });
-    select.disabled = rows.length === 0;
+    select.disabled = added === 0;
   }
 
   function selectedRow(widget, level) {
@@ -306,7 +308,10 @@
       const totalPages = Number(meta.total_pages || meta.totalPages || meta.pages || meta.last_page || 0);
       if ((totalPages && page >= totalPages) || rows.length < PAGE_SIZE || rows.length === 0) break;
     }
-    const deduped = [...new Map(all.map(item => [placeId(item, "village") || placeName(item, "village"), item])).values()];
+    // Exclude records that lack usable names/codes; otherwise the browser can
+    // leave a disabled select even though the API returned a non-empty array.
+    const usableRows = all.filter(item => placeName(item, "village") && placeId(item, "village"));
+    const deduped = [...new Map(usableRows.map(item => [placeId(item, "village") || placeName(item, "village"), item])).values()];
     if (!deduped.length) {
       showVillageFallback(widget, new Error("The location service returned no village records for this taluka."));
       return;
