@@ -92,6 +92,7 @@
     <div class="form-group"><label for="signup-state">State / Union Territory *</label><select class="account-input" id="signup-state" required><option value="">Loading states…</option></select></div>
     <div class="form-group"><label for="signup-district">District *</label><select class="account-input" id="signup-district" required disabled><option value="">Select state first</option></select></div>
     <div class="form-group"><label for="signup-taluka">Taluka / sub-district *</label><select class="account-input" id="signup-taluka" required disabled><option value="">Select district first</option></select></div>
+    <div class="form-group wide" id="signup-taluka-other-wrap" hidden><label for="signup-taluka-other">Taluka / sub-district name *</label><input class="account-input" id="signup-taluka-other" maxlength="120" placeholder="Enter your taluka / sub-district"></div>
     <div class="form-group"><label for="signup-village">Village / locality *</label><select class="account-input" id="signup-village" required disabled><option value="">Select taluka first</option></select></div>
     <div class="form-group wide" id="signup-village-other-wrap" hidden><label for="signup-village-other">Town / locality name *</label><input class="account-input" id="signup-village-other" maxlength="120" placeholder="Enter your town or locality"></div>
     <div class="form-group wide"><label for="signup-street">Street address / house number / landmark *</label><textarea class="account-input" id="signup-street" required rows="3" maxlength="400" placeholder="House / flat number, street, area, nearby landmark"></textarea></div>
@@ -132,6 +133,7 @@
 <div class="form-group"><label for="profile-state">State / Union Territory *</label><select class="account-input" id="profile-state" required><option value="">Loading states…</option></select></div>
 <div class="form-group"><label for="profile-district">District *</label><select class="account-input" id="profile-district" required disabled><option value="">Select state first</option></select></div>
 <div class="form-group"><label for="profile-taluka">Taluka / sub-district *</label><select class="account-input" id="profile-taluka" required disabled><option value="">Select district first</option></select></div>
+ <div class="form-group wide" id="profile-taluka-other-wrap" hidden><label for="profile-taluka-other">Taluka / sub-district name *</label><input class="account-input" id="profile-taluka-other" maxlength="120" placeholder="Enter your taluka / sub-district"></div>
 <div class="form-group"><label for="profile-village">Village / locality *</label><select class="account-input" id="profile-village" required disabled><option value="">Select taluka first</option></select></div>
 <div class="form-group wide" id="profile-village-other-wrap" hidden><label for="profile-village-other">Town / locality name *</label><input class="account-input" id="profile-village-other" maxlength="120" placeholder="Enter your town or locality"></div>
 <div class="form-group wide"><label for="profile-street">Street address / house number / landmark *</label><textarea class="account-input" id="profile-street" required autocomplete="street-address" rows="3" maxlength="400" placeholder="House / flat number, street, area, nearby landmark"></textarea></div>
@@ -152,7 +154,7 @@
 </main>
 <footer class="site-footer"><div class="container footer-bottom"><span>© <span data-year></span> Jija Studio. All rights reserved.</span><span><a href="contact.html">Contact us</a> · <a href="index.html#wishlist-section">Your favourites</a></span></div></footer>
 <script src="js/products.js"></script><script src="js/main.js?v=whatsapp-direct-app-4"></script>
-<script type="module" src="js/india-address.js?v=india-post-pin-verification-4"></script>
+<script type="module" src="js/india-address.js?v=india-taluka-manual-fallback-1"></script>
 <script type="module" src="js/customer-auth.js?v=email-password-address-1"></script>
 <script type="module" src="js/customer-account.js?v=address-verification-2"></script>
 </body></html>
