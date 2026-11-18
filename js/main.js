@@ -498,40 +498,93 @@ function setupHome() {
 }
 function setupShop() {
   const grid = document.querySelector('#shop-grid'); if (!grid) return;
-  const search = document.querySelector('#shop-search'); const category = document.querySelector('#category-filter'); const subcategory = document.querySelector('#subcategory-filter'); const sort = document.querySelector('#sort-filter'); const count = document.querySelector('#results-count');
+  const search = document.querySelector('#shop-search');
+  const category = document.querySelector('#category-filter');
+  const subcategory = document.querySelector('#subcategory-filter');
+  const colour = document.querySelector('#colour-filter');
+  const size = document.querySelector('#size-filter');
+  const discount = document.querySelector('#discount-filter');
+  const minPrice = document.querySelector('#min-price-filter');
+  const maxPrice = document.querySelector('#max-price-filter');
+  const sort = document.querySelector('#sort-filter');
+  const clear = document.querySelector('#clear-shop-filters');
+  const count = document.querySelector('#results-count');
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem('jijaAdminSettings') || '{}') || {}; } catch {}
   const params = new URLSearchParams(location.search);
-  const allCategories = [...new Set([...products.map(p => p.category).filter(Boolean), ...(settings.categories || []), ...Object.keys(settings.subcategories || {}), ...(Array.isArray(settings.collectionCards) ? settings.collectionCards.map(card => card && card.category).filter(Boolean) : [])])].sort();
+  const published = () => products.filter(p => p && p.published !== false);
+  const activePrice = p => {
+    const price = Number(p.price) || 0, sale = Number(p.salePrice);
+    return sale > 0 && sale < price ? sale : price;
+  };
+  const discountPercent = p => {
+    const price = Number(p.price) || 0, sale = Number(p.salePrice);
+    return price > 0 && sale > 0 && sale < price ? Math.round((price - sale) / price * 100) : 0;
+  };
+  const allCategories = [...new Set([...published().map(p => p.category).filter(Boolean), ...(settings.categories || []), ...Object.keys(settings.subcategories || {}), ...(Array.isArray(settings.collectionCards) ? settings.collectionCards.map(card => card && card.category).filter(Boolean) : [])])].sort();
   if (category) {
     const requested = params.get('category') || 'all';
     category.innerHTML = '<option value="all">All categories</option>' + allCategories.map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
     category.value = allCategories.includes(requested) ? requested : 'all';
   }
+  function setFacet(select, labels, firstLabel, requested = 'all') {
+    if (!select) return;
+    const names = [...new Set(labels.map(x => String(x || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+    select.innerHTML = '<option value="all">' + firstLabel + '</option>' + names.map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
+    select.value = names.includes(requested) ? requested : 'all';
+  }
   function fillSubcategories() {
     if (!subcategory) return;
     const parent = category?.value || 'all';
     const names = parent === 'all'
-      ? [...new Set([...products.map(p => p.subcategory).filter(Boolean), ...Object.values(settings.subcategories || {}).flat()])]
-      : [...new Set([...(settings.subcategories?.[parent] || []), ...products.filter(p => p.category === parent).map(p => p.subcategory).filter(Boolean)])];
+      ? [...new Set([...published().map(p => p.subcategory).filter(Boolean), ...Object.values(settings.subcategories || {}).flat()])]
+      : [...new Set([...(settings.subcategories?.[parent] || []), ...published().filter(p => p.category === parent).map(p => p.subcategory).filter(Boolean)])];
     const requested = params.get('subcategory') || 'all';
-    subcategory.innerHTML = '<option value="all">All subcategories</option>' + names.sort().map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
-    subcategory.value = names.includes(requested) ? requested : 'all';
+    setFacet(subcategory, names, 'All subcategories', requested);
   }
+  const colourNames = published().flatMap(p => Array.isArray(p.colours) ? p.colours : (Array.isArray(p.colors) ? p.colors : []));
+  const sizeNames = published().flatMap(p => Array.isArray(p.sizes) ? p.sizes : []);
+  setFacet(colour, colourNames, 'All colours', params.get('colour') || 'all');
+  setFacet(size, sizeNames, 'All sizes', params.get('size') || 'all');
+  if (discount && params.get('discount')) discount.value = [...discount.options].some(o => o.value === params.get('discount')) ? params.get('discount') : 'all';
+  if (minPrice && params.get('minPrice')) minPrice.value = params.get('minPrice');
+  if (maxPrice && params.get('maxPrice')) maxPrice.value = params.get('maxPrice');
+  if (sort && params.get('sort')) sort.value = [...sort.options].some(o => o.value === params.get('sort')) ? params.get('sort') : 'featured';
   fillSubcategories();
   function filter() {
-    let list = products.filter(p => p.published !== false);
-    const q = (search?.value || '').toLowerCase().trim(); const cat = category?.value || 'all'; const sub = subcategory?.value || 'all';
-    if (q) list = list.filter(p => `${p.name} ${p.category} ${p.subcategory || ''} ${p.description}`.toLowerCase().includes(q));
+    let list = published().slice();
+    const q = (search?.value || '').toLowerCase().trim();
+    const cat = category?.value || 'all', sub = subcategory?.value || 'all';
+    const selectedColour = colour?.value || 'all', selectedSize = size?.value || 'all';
+    const min = minPrice?.value === '' || minPrice?.value === undefined ? null : Math.max(0, Number(minPrice.value) || 0);
+    const max = maxPrice?.value === '' || maxPrice?.value === undefined ? null : Math.max(0, Number(maxPrice.value) || 0);
+    const minDiscount = discount?.value && discount.value !== 'all' ? Number(discount.value) : 0;
+    if (q) list = list.filter(p => `${p.name || ''} ${p.category || ''} ${p.subcategory || ''} ${p.description || ''} ${(p.colours || p.colors || []).join(' ')}`.toLowerCase().includes(q));
     if (cat !== 'all') list = list.filter(p => p.category === cat);
     if (sub !== 'all') list = list.filter(p => p.subcategory === sub);
-    if (sort?.value === 'price-low') list.sort((a,b) => (a.salePrice || a.price) - (b.salePrice || b.price));
-    if (sort?.value === 'price-high') list.sort((a,b) => (b.salePrice || b.price) - (a.salePrice || a.price));
-    if (sort?.value === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
-    renderProducts(grid, list); if (count) count.textContent = `${list.length} styles to discover`;
+    if (selectedColour !== 'all') list = list.filter(p => (Array.isArray(p.colours) ? p.colours : (Array.isArray(p.colors) ? p.colors : [])).some(c => String(c) === selectedColour));
+    if (selectedSize !== 'all') list = list.filter(p => (Array.isArray(p.sizes) ? p.sizes : []).some(s => String(s) === selectedSize));
+    if (min !== null) list = list.filter(p => activePrice(p) >= min);
+    if (max !== null) list = list.filter(p => activePrice(p) <= max);
+    if (minDiscount > 0) list = list.filter(p => discountPercent(p) >= minDiscount);
+    if (sort?.value === 'price-low') list.sort((a,b) => activePrice(a) - activePrice(b));
+    if (sort?.value === 'price-high') list.sort((a,b) => activePrice(b) - activePrice(a));
+    if (sort?.value === 'discount-high') list.sort((a,b) => discountPercent(b) - discountPercent(a));
+    if (sort?.value === 'rating-high') list.sort((a,b) => (Number(b.rating)||0) - (Number(a.rating)||0));
+    if (sort?.value === 'newest') list.sort((a,b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime());
+    if (sort?.value === 'name') list.sort((a,b) => String(a.name || '').localeCompare(String(b.name || '')));
+    renderProducts(grid, list);
+    if (count) count.textContent = `${list.length} styles found`;
   }
-  [search, subcategory, sort].forEach(control => control?.addEventListener(control === search ? 'input' : 'change', filter));
+  [search,minPrice,maxPrice].forEach(control => control?.addEventListener('input', filter));
+  [subcategory,colour,size,discount,sort].forEach(control => control?.addEventListener('change', filter));
   category?.addEventListener('change', () => { fillSubcategories(); filter(); });
+  clear?.addEventListener('click', () => {
+    if(search)search.value=''; if(category)category.value='all';
+    if(minPrice)minPrice.value=''; if(maxPrice)maxPrice.value='';
+    if(colour)colour.value='all'; if(size)size.value='all'; if(discount)discount.value='all'; if(sort)sort.value='featured';
+    fillSubcategories(); filter();
+  });
   filter();
 }
 function setupProduct() {
