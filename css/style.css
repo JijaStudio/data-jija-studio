@@ -283,3 +283,10 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
  .home-banner-pause{right:14px;bottom:13px}
 }
 @media(prefers-reduced-motion:reduce){.home-banner-slide,.home-banner-dots button{transition:none!important}}
+
+/* Expanded catalogue filters inspired by large fashion storefronts. */
+.shop-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:18px}
+.shop-toolbar input,.shop-toolbar select{min-width:0;font-size:12px;padding:10px}
+.shop-filter-clear{grid-column:1/-1;min-height:42px;padding:8px 12px}
+@media(min-width:600px){.shop-toolbar{grid-template-columns:repeat(3,minmax(0,1fr))}.shop-filter-clear{grid-column:auto}}
+@media(min-width:900px){.shop-toolbar{grid-template-columns:2fr repeat(4,minmax(120px,1fr))}.shop-toolbar input,.shop-toolbar select{font-size:12px}}
