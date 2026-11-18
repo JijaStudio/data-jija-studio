@@ -241,3 +241,45 @@ html[data-festival-theme="active"] .button-primary{box-shadow:0 3px 0 color-mix(
     box-shadow: 0 18px 40px rgba(23, 77, 56, 0.12);
   }
 }
+
+
+/* Jija Studio campaign carousel: full-width, swipeable homepage banner frames. */
+.hero.is-banner-carousel{padding:0!important;margin:0;background:var(--beige);overflow:hidden}
+.home-banner-carousel{position:relative;width:100%;overflow:hidden;background:var(--green-dark);isolation:isolate}
+.home-banner-track{position:relative;width:100%;min-height:250px}
+.home-banner-slide{position:absolute;inset:0;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .45s ease}
+.home-banner-slide.is-active{position:relative;opacity:1;visibility:visible;pointer-events:auto}
+.home-banner-link{display:block;position:relative;isolation:isolate;width:100%;height:clamp(260px,40vw,560px);min-height:260px;overflow:hidden;color:#fff;text-decoration:none;background:var(--green-dark)}
+.home-banner-picture{position:absolute;inset:0;display:block;width:100%;height:100%}
+.home-banner-media{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
+.home-banner-slide.no-mobile-crop .home-banner-media[data-no-mobile-crop]{object-fit:contain;background:var(--beige-deep)}
+.home-banner-shade{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(11,24,17,.64) 0%,rgba(11,24,17,.35) 42%,rgba(11,24,17,.03) 76%),linear-gradient(0deg,rgba(11,24,17,.22),transparent 45%);pointer-events:none}
+.home-banner-copy{position:absolute;z-index:2;left:clamp(18px,6vw,94px);top:50%;transform:translateY(-50%);display:flex;align-items:flex-start;flex-direction:column;gap:clamp(7px,1vw,14px);width:min(560px,70%);pointer-events:none}
+.home-banner-eyebrow{font-size:clamp(10px,1.3vw,14px);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#f6dfa0}
+.home-banner-title{font:600 clamp(28px,5vw,64px)/1.04 var(--serif);letter-spacing:-.025em;max-width:100%;text-wrap:balance;text-shadow:0 2px 18px rgba(0,0,0,.18)}
+.home-banner-subtitle{font-size:clamp(12px,1.55vw,18px);line-height:1.5;max-width:420px;color:rgba(255,255,255,.94)}
+.home-banner-cta{display:inline-flex;align-items:center;gap:9px;margin-top:7px;border:1px solid rgba(255,255,255,.78);border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);padding:11px 18px;font-size:12px;font-weight:700;letter-spacing:.04em;color:white}
+.home-banner-arrow{position:absolute;z-index:5;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(255,255,255,.75);border-radius:50%;background:rgba(18,35,27,.38);color:white;font-size:30px;line-height:1;cursor:pointer;backdrop-filter:blur(5px)}
+.home-banner-prev{left:clamp(8px,2.3vw,26px)}.home-banner-next{right:clamp(8px,2.3vw,26px)}
+.home-banner-dots{position:absolute;z-index:6;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:8px;padding:7px 11px;border-radius:999px;background:rgba(15,29,22,.25);backdrop-filter:blur(8px)}
+.home-banner-dots button{width:8px;height:8px;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.58);cursor:pointer;transition:width .2s ease,background .2s ease}
+.home-banner-dots button[aria-current=true],.home-banner-dots button.is-active{width:25px;background:#fff}
+.home-banner-pause{position:absolute;z-index:6;right:18px;bottom:15px;width:30px;height:30px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.65);border-radius:50%;background:rgba(15,29,22,.3);color:#fff;font-size:13px;cursor:pointer}
+.home-banner-link:focus-visible,.home-banner-arrow:focus-visible,.home-banner-dots button:focus-visible,.home-banner-pause:focus-visible{outline:3px solid #f8d66d;outline-offset:-4px}
+.admin-banner-empty-preview{padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:12px;margin-top:8px}
+.home-banner-editor-card [data-upload]{max-width:100%}
+@media(max-width:640px){
+ .home-banner-track{min-height:300px}
+ .home-banner-link{height:clamp(330px,112vw,520px);min-height:330px}
+ .home-banner-shade{background:linear-gradient(0deg,rgba(9,20,14,.78) 0%,rgba(9,20,14,.36) 39%,rgba(9,20,14,.04) 80%)}
+ .home-banner-copy{top:auto;bottom:58px;transform:none;left:18px;width:calc(100% - 36px);gap:8px}
+ .home-banner-title{font-size:clamp(30px,9vw,43px);max-width:95%}
+ .home-banner-subtitle{font-size:13px;max-width:96%}
+ .home-banner-eyebrow{font-size:10px}
+ .home-banner-cta{padding:9px 14px;font-size:11px;margin-top:3px}
+ .home-banner-arrow{width:34px;height:34px;font-size:25px;top:43%}
+ .home-banner-prev{left:8px}.home-banner-next{right:8px}
+ .home-banner-dots{bottom:14px;left:18px;transform:none;gap:7px;padding:6px 9px}
+ .home-banner-pause{right:14px;bottom:13px}
+}
+@media(prefers-reduced-motion:reduce){.home-banner-slide,.home-banner-dots button{transition:none!important}}
